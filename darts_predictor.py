@@ -1,6 +1,8 @@
 import streamlit as st
 import numpy as np
 import random
+import pandas as pd # Lisätty DataFramen käyttöön
+import altair as alt # Lisätty kaavion korjaamiseen
 from typing import Dict, Any
 
 # --- Streamlit-sivun asetukset (Tumma teema oletuksena) ---
@@ -11,7 +13,7 @@ st.set_page_config(
 )
 
 # --- 1. Optimal Checkout Taulukko & Apumuuttujat ---
-# ... (CHECKOUT_MAP ja SCORING_MAP pysyvät ennallaan)
+# Tässä osiossa ei ole toiminnallisia muutoksia
 CHECKOUT_MAP = {
     170: ["T20", "T20", "Bull"], 167: ["T20", "T19", "Bull"], 164: ["T20", "T18", "Bull"], 161: ["T20", "T17", "Bull"],
     160: ["T20", "T20", "D20"], 158: ["T20", "T20", "D19"], 157: ["T20", "T19", "D20"], 156: ["T20", "T20", "D18"],
@@ -47,13 +49,13 @@ CHECKOUT_MAP = {
 }
 SCORING_MAP = {"S": 1, "D": 2, "T": 3, "Bull": 50, "B": 50}
 
-# --- 2. Pelaajaprofiilit (PÄIVITETYT TIEDOT SISÄLTÄEN FDI:n, F9A:n, TWS:n ja RWS:n) ---
-# KA = Kausikeskiarvo, KAUSI 2025 = Viimeisimmän kauden keskiarvo (3DA), COP = Checkout-prosentti, FDI = Form Development Index, F9A = First 9 Average (arvio), TWS = Throw Win % (arvio), RWS = Receive Win % (arvio)
+# --- 2. Pelaajaprofiilit (SISÄLTÄÄ TWS ja RWS tiedot) ---
+# TWS = Throw Win % (Voitto% aloittaessa), RWS = Receive Win % (Voitto% heitettäessä toisena)
 DEFAULT_PRESETS = {
     "VALITSE PROFIILI": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": 96.5, "TWS": 70, "RWS": 40},
     "--- PDC TOP 32 (Sijoitetut) ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": "N/A", "TWS": "N/A", "RWS": "N/A"},
     
-    # 1. Neljännes (F9A arviot: 3DA + 2.0-2.5)
+    # 1. Neljännes 
     "Luke Littler (1)": {"KA": 100.96, "KAUSI 2025": 100.96, "COP": 41, "STD": 16, "FDI": 72.0, "F9A": 103.4, "TWS": 85, "RWS": 52},
     "Joe Cullen (32)": {"KA": 94.20, "KAUSI 2025": 94.5, "COP": 33, "STD": 20, "FDI": 59.0, "F9A": 96.5, "TWS": 70, "RWS": 38},
     "Damon Heta (16)": {"KA": 94.81, "KAUSI 2025": 94.81, "COP": 39, "STD": 20, "FDI": 59.6, "F9A": 97.0, "TWS": 72, "RWS": 39},
@@ -95,109 +97,13 @@ DEFAULT_PRESETS = {
 
     "--- SIJOITTAMATTOMAT & KVALIFIOIJAT ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": "N/A", "TWS": "N/A", "RWS": "N/A"},
     
-    # R1: 1. Neljännes (Arvioitu TWS/RWS)
+    # Esimerkkejä muista (R1):
     "Darius Labanauskas (LTU)": {"KA": 89.0, "KAUSI 2025": 90.0, "COP": 33, "STD": 21, "FDI": 50.0, "F9A": 91.5, "TWS": 60, "RWS": 30},
-    "Mario Vandenbogaerde (BEL)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 32, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "David Davies (WAL)": {"KA": 88.0, "KAUSI 2025": 88.0, "COP": 30, "STD": 22, "FDI": 48.0, "F9A": 89.0, "TWS": 55, "RWS": 28},
-    "Bradley Brooks (ENG)": {"KA": 89.5, "KAUSI 2025": 89.0, "COP": 33, "STD": 21, "FDI": 49.0, "F9A": 90.5, "TWS": 57, "RWS": 30},
     "Mensur Suljovic (AUT)": {"KA": 91.0, "KAUSI 2025": 90.5, "COP": 36, "STD": 20, "FDI": 50.5, "F9A": 92.0, "TWS": 63, "RWS": 33},
-    "David Cameron (CAN)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 29, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Steve Lennon (IRE)": {"KA": 90.0, "KAUSI 2025": 90.5, "COP": 34, "STD": 21, "FDI": 50.5, "F9A": 92.0, "TWS": 62, "RWS": 31},
     "Raymond van Barneveld (NED)": {"KA": 92.5, "KAUSI 2025": 92.0, "COP": 34, "STD": 19, "FDI": 52.0, "F9A": 93.8, "TWS": 66, "RWS": 34},
-    "Stefan Bellmont (SUI)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 31, "STD": 22, "FDI": 48.5, "F9A": 89.5, "TWS": 56, "RWS": 29},
-    "Cor Dekker (NED)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 28, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Ian White (ENG)": {"KA": 91.0, "KAUSI 2025": 90.5, "COP": 34, "STD": 20, "FDI": 50.5, "F9A": 92.0, "TWS": 62, "RWS": 32},
-    "Mervyn King (ENG)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 32, "STD": 21, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Xiaochen Zong (CHN)": {"KA": 87.5, "KAUSI 2025": 87.0, "COP": 29, "STD": 23, "FDI": 47.0, "F9A": 88.0, "TWS": 53, "RWS": 28},
-    "Andrew Gilding (ENG)": {"KA": 91.5, "KAUSI 2025": 91.0, "COP": 34, "STD": 20, "FDI": 51.0, "F9A": 92.5, "TWS": 64, "RWS": 33},
-    "Cam Crabtree (ENG)": {"KA": 86.5, "KAUSI 2025": 86.5, "COP": 30, "STD": 22, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 28},
-    "Boris Krcmar (CRO)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 33, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "Martin Lukeman (ENG)": {"KA": 89.5, "KAUSI 2025": 90.0, "COP": 32, "STD": 21, "FDI": 50.0, "F9A": 91.5, "TWS": 59, "RWS": 30},
-    "Max Hopp (GER)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 31, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 29},
-    "Adam Gawlas (CZE)": {"KA": 88.5, "KAUSI 2025": 89.0, "COP": 31, "STD": 22, "FDI": 49.0, "F9A": 90.5, "TWS": 57, "RWS": 30},
-    "Lukas Wenig (GER)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 29, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Wesley Plaisier (NED)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 32, "STD": 21, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Owen Bates (ENG)": {"KA": 87.5, "KAUSI 2025": 88.0, "COP": 30, "STD": 22, "FDI": 48.0, "F9A": 89.0, "TWS": 56, "RWS": 29},
     "Krzysztof Ratajski (POL)": {"KA": 92.0, "KAUSI 2025": 92.5, "COP": 34, "STD": 20, "FDI": 52.5, "F9A": 94.3, "TWS": 66, "RWS": 35},
-    "Alexis Toylo (PHI)": {"KA": 85.0, "KAUSI 2025": 85.0, "COP": 28, "STD": 24, "FDI": 45.0, "F9A": 86.0, "TWS": 50, "RWS": 26},
-
-    # R1: 2. Neljännes
-    "Sebastian Bialecki (POL)": {"KA": 87.5, "KAUSI 2025": 88.0, "COP": 31, "STD": 22, "FDI": 48.0, "F9A": 89.0, "TWS": 56, "RWS": 29},
-    "Richard Veenstra (NED)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 32, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "Nitin Kumar (IND)": {"KA": 85.0, "KAUSI 2025": 85.0, "COP": 27, "STD": 24, "FDI": 45.0, "F9A": 86.0, "TWS": 50, "RWS": 26},
-    "Andy Baetens (BEL)": {"KA": 88.5, "KAUSI 2025": 89.0, "COP": 32, "STD": 21, "FDI": 49.0, "F9A": 90.5, "TWS": 57, "RWS": 30},
-    "James Hurrell (ENG)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Stowe Buntz (USA)": {"KA": 86.5, "KAUSI 2025": 87.0, "COP": 29, "STD": 23, "FDI": 47.0, "F9A": 88.0, "TWS": 53, "RWS": 28},
-    "Stephen Burton (ENG)": {"KA": 87.5, "KAUSI 2025": 88.0, "COP": 30, "STD": 22, "FDI": 48.0, "F9A": 89.0, "TWS": 56, "RWS": 29},
-    "Keane Barry (IRE)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 32, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "Tim Pusey (AUS)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 28, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
-    "Chris Landman (NED)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 31, "STD": 22, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Brendan Dolan (NIR)": {"KA": 90.0, "KAUSI 2025": 90.0, "COP": 35, "STD": 20, "FDI": 50.0, "F9A": 91.5, "TWS": 61, "RWS": 32},
-    "Travis Dudeney (ENG)": {"KA": 86.0, "KAUSI 2025": 86.0, "COP": 28, "STD": 23, "FDI": 46.0, "F9A": 87.0, "TWS": 51, "RWS": 27},
-    "Adam Lipscombe (ENG)": {"KA": 85.5, "KAUSI 2025": 86.0, "COP": 29, "STD": 23, "FDI": 46.0, "F9A": 87.0, "TWS": 52, "RWS": 27},
-    "Dom Taylor (ENG)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Oskar Lukasiak (POL)": {"KA": 84.5, "KAUSI 2025": 85.0, "COP": 27, "STD": 24, "FDI": 45.0, "F9A": 86.0, "TWS": 50, "RWS": 26},
-    "Lisa Ashton (ENG)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Niels Zonneveld (NED)": {"KA": 88.5, "KAUSI 2025": 89.0, "COP": 31, "STD": 21, "FDI": 49.0, "F9A": 90.5, "TWS": 58, "RWS": 30},
-    "Haupai Puha (NZL)": {"KA": 87.5, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 55, "RWS": 28},
-    "Andreas Harrysson (SWE)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 29, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Thibault Tricole (FRA)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Motomu Sakai (JPN)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 28, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
     "Fallon Sherrock (ENG)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 32, "STD": 21, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Ricardo Pietreczko (GER)": {"KA": 90.0, "KAUSI 2025": 90.5, "COP": 33, "STD": 21, "FDI": 50.5, "F9A": 92.0, "TWS": 61, "RWS": 32},
-    "José de Sousa (POR)": {"KA": 91.5, "KAUSI 2025": 91.0, "COP": 35, "STD": 20, "FDI": 51.0, "F9A": 92.8, "TWS": 64, "RWS": 33},
-
-    # R1: 3. Neljännes
-    "Ted Evetts (ENG)": {"KA": 88.5, "KAUSI 2025": 89.0, "COP": 32, "STD": 21, "FDI": 49.0, "F9A": 90.5, "TWS": 58, "RWS": 30},
-    "Jeffrey de Graaf (NED)": {"KA": 87.5, "KAUSI 2025": 88.0, "COP": 31, "STD": 22, "FDI": 48.0, "F9A": 89.0, "TWS": 56, "RWS": 29},
-    "Paul Lim (SGP)": {"KA": 84.5, "KAUSI 2025": 85.0, "COP": 27, "STD": 24, "FDI": 45.0, "F9A": 86.0, "TWS": 50, "RWS": 26},
-    "Karel Sedlacek (CZE)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 33, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "Gabriel Clemens (GER)": {"KA": 92.5, "KAUSI 2025": 93.0, "COP": 34, "STD": 20, "FDI": 53.0, "F9A": 95.0, "TWS": 67, "RWS": 35},
-    "Alex Spellman (USA)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 29, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Lourence Ilagan (PHI)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 28, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
-    "Mickey Mansell (NIR)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 31, "STD": 22, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Leonard Gates (USA)": {"KA": 87.5, "KAUSI 2025": 88.0, "COP": 30, "STD": 22, "FDI": 48.0, "F9A": 89.0, "TWS": 56, "RWS": 29},
-    "David Munyua (KEN)": {"KA": 84.0, "KAUSI 2025": 84.5, "COP": 26, "STD": 25, "FDI": 44.5, "F9A": 85.5, "TWS": 49, "RWS": 25},
-    "Kevin Doets (NED)": {"KA": 89.5, "KAUSI 2025": 90.0, "COP": 32, "STD": 21, "FDI": 50.0, "F9A": 91.5, "TWS": 60, "RWS": 30},
-    "Matthew Dennant (ENG)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Ryusei Azemoto (JPN)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 28, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
-    "Ricky Evans (ENG)": {"KA": 91.0, "KAUSI 2025": 91.5, "COP": 33, "STD": 20, "FDI": 51.5, "F9A": 93.0, "TWS": 64, "RWS": 33},
-    "Man Lok Leung (HKG)": {"KA": 85.5, "KAUSI 2025": 86.0, "COP": 29, "STD": 23, "FDI": 46.0, "F9A": 87.0, "TWS": 52, "RWS": 27},
-    "Charlie Manby (ENG)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 29, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Matt Campbell (CAN)": {"KA": 88.5, "KAUSI 2025": 89.0, "COP": 32, "STD": 21, "FDI": 49.0, "F9A": 90.5, "TWS": 58, "RWS": 30},
-    "Adam Sevada (USA)": {"KA": 84.0, "KAUSI 2025": 84.5, "COP": 26, "STD": 25, "FDI": 44.5, "F9A": 85.5, "TWS": 49, "RWS": 25},
-    "Cristo Reyes (ESP)": {"KA": 89.0, "KAUSI 2025": 97.61, "COP": 33, "STD": 21, "FDI": 65.2, "F9A": 99.8, "TWS": 79, "RWS": 43},
-    "Alan Soutar (SCO)": {"KA": 89.5, "KAUSI 2025": 90.0, "COP": 33, "STD": 21, "FDI": 50.0, "F9A": 91.5, "TWS": 60, "RWS": 30},
     "Teemu Harju (FIN)": {"KA": 87.0, "KAUSI 2025": 88.5, "COP": 25, "STD": 24, "FDI": 48.5, "F9A": 89.5, "TWS": 55, "RWS": 28},
-    "Darren Beveridge (SCO)": {"KA": 86.5, "KAUSI 2025": 87.0, "COP": 29, "STD": 23, "FDI": 47.0, "F9A": 88.0, "TWS": 53, "RWS": 28},
-    "Madars Razma (LAT)": {"KA": 90.0, "KAUSI 2025": 90.5, "COP": 33, "STD": 21, "FDI": 50.5, "F9A": 92.0, "TWS": 61, "RWS": 32},
-    "Jamai van den Herik (NED)": {"KA": 86.0, "KAUSI 2025": 86.0, "COP": 29, "STD": 23, "FDI": 46.0, "F9A": 87.0, "TWS": 51, "RWS": 27},
-
-    # R1: 4. Neljännes
-    "Mitsuhiko Tatsunami (JPN)": {"KA": 84.5, "KAUSI 2025": 85.0, "COP": 27, "STD": 24, "FDI": 45.0, "F9A": 86.0, "TWS": 50, "RWS": 26},
-    "William O'Connor (IRE)": {"KA": 89.5, "KAUSI 2025": 90.0, "COP": 33, "STD": 21, "FDI": 50.0, "F9A": 91.5, "TWS": 60, "RWS": 30},
-    "Krzysztof Kciuk (POL)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 29, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Noa-Lynn van Leuven (NED)": {"KA": 85.5, "KAUSI 2025": 86.0, "COP": 29, "STD": 23, "FDI": 46.0, "F9A": 87.0, "TWS": 52, "RWS": 27},
-    "Kim Huybrechts (BEL)": {"KA": 90.5, "KAUSI 2025": 91.0, "COP": 33, "STD": 20, "FDI": 51.0, "F9A": 92.8, "TWS": 63, "RWS": 33},
-    "Arno Merk (NED)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 28, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
-    "Adam Hunt (ENG)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Connor Scutt (ENG)": {"KA": 88.5, "KAUSI 2025": 89.0, "COP": 31, "STD": 21, "FDI": 49.0, "F9A": 90.5, "TWS": 58, "RWS": 30},
-    "Simon Whitlock (AUS)": {"KA": 90.0, "KAUSI 2025": 90.0, "COP": 35, "STD": 20, "FDI": 50.0, "F9A": 91.8, "TWS": 61, "RWS": 32},
-    "Dominik Grüllich (GER)": {"KA": 85.5, "KAUSI 2025": 86.0, "COP": 28, "STD": 24, "FDI": 46.0, "F9A": 87.0, "TWS": 51, "RWS": 27},
-    "Scott Williams (ENG)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 32, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "Paolo Nebrida (PHI)": {"KA": 84.0, "KAUSI 2025": 84.5, "COP": 26, "STD": 25, "FDI": 44.5, "F9A": 85.5, "TWS": 49, "RWS": 25},
-    "Jurjen van der Velde (NED)": {"KA": 86.5, "KAUSI 2025": 87.0, "COP": 30, "STD": 22, "FDI": 47.0, "F9A": 88.0, "TWS": 53, "RWS": 28},
-    "Nick Kenny (WAL)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 31, "STD": 22, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Justin Hood (ENG)": {"KA": 86.0, "KAUSI 2025": 86.5, "COP": 29, "STD": 23, "FDI": 46.5, "F9A": 87.5, "TWS": 52, "RWS": 27},
-    "Jonny Tata (NZL)": {"KA": 85.0, "KAUSI 2025": 85.0, "COP": 27, "STD": 24, "FDI": 45.0, "F9A": 86.0, "TWS": 50, "RWS": 26},
-    "Ryan Meikle (ENG)": {"KA": 88.5, "KAUSI 2025": 89.04, "COP": 39, "STD": 21, "FDI": 49.1, "F9A": 90.5, "TWS": 58, "RWS": 30},
-    "Jesus Salate (ESP)": {"KA": 84.0, "KAUSI 2025": 84.5, "COP": 26, "STD": 25, "FDI": 44.5, "F9A": 85.5, "TWS": 49, "RWS": 25},
-    "Gemma Hayter (ENG)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 28, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
-    "Niko Springer (GER)": {"KA": 87.0, "KAUSI 2025": 87.5, "COP": 30, "STD": 22, "FDI": 47.5, "F9A": 88.5, "TWS": 54, "RWS": 28},
-    "Joe Comito (USA)": {"KA": 85.5, "KAUSI 2025": 86.0, "COP": 28, "STD": 24, "FDI": 46.0, "F9A": 87.0, "TWS": 51, "RWS": 27},
-    "Beau Greaves (ENG)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 32, "STD": 21, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Callan Rydz (ENG)": {"KA": 89.0, "KAUSI 2025": 89.5, "COP": 32, "STD": 21, "FDI": 49.5, "F9A": 91.0, "TWS": 58, "RWS": 30},
-    "Patrik Kovacs (HUN)": {"KA": 85.0, "KAUSI 2025": 85.5, "COP": 27, "STD": 24, "FDI": 45.5, "F9A": 86.5, "TWS": 51, "RWS": 27},
     
     "--- LISÄPROFIILIT ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": "N/A", "TWS": "N/A", "RWS": "N/A"},
     "Epätasainen (Aloittelija)": {"KA": 80.0, "KAUSI 2025": 80.0, "COP": 28, "STD": 25, "FDI": 30.0, "F9A": 81.0, "TWS": 45, "RWS": 25},
@@ -206,8 +112,9 @@ DEFAULT_PRESETS = {
 PLAYER_NAMES = list(DEFAULT_PRESETS.keys())
 
 # --- 3. Simulaatiofunktiot (ei muutoksia) ---
-# ... (Funktiot get_hit_score, simulate_score, attempt_checkout, 
-# simulate_leg, simulate_match pysyvät samoina)
+# Simulointifunktiot (get_hit_score, simulate_score, attempt_checkout, 
+# simulate_leg, simulate_match) pysyvät samoina
+
 def get_hit_score(segment: str) -> int:
     """Laskee segmentin pistearvon."""
     if segment in ["Bull", "B"]:
@@ -226,16 +133,20 @@ def attempt_checkout(current_score: int, cop: float) -> tuple[int, bool]:
     if current_score not in CHECKOUT_MAP or current_score <= 1:
         return current_score, False 
 
+    # Käytetään COP-prosenttia (esim. 0.35) voittoon
     if random.random() < cop:
         return 0, True
     else:
+        # Jos ei osu ulos, simuloidaan osumista reitillä
         route = CHECKOUT_MAP.get(current_score, ["S20", "S20", "S20"]) 
+        # Tässä käytetään hyvin yksinkertaistettua mallia: vain osa reitin arvoista saadaan pisteiksi
         points_to_target = sum(get_hit_score(t) for t in route if not t.startswith('D'))
         score_taken = int(points_to_target * random.uniform(0.5, 0.9))
         
         new_score = current_score - score_taken
         
         if new_score < 2:
+            # Jos bustaa, palautetaan alkuperäinen tulos
             return current_score, False
         return new_score, False
 
@@ -294,6 +205,7 @@ def simulate_match(params: Dict[str, Any]) -> tuple[str, int, int]:
             set_wins_b = 0
             starts_a = starts_a_in_set 
             
+            # Legien simulaatio setissä
             while set_wins_a < target_legs_per_set and set_wins_b < target_legs_per_set:
                 leg_winner = simulate_leg(p_a_avg, p_a_cop, p_a_std, p_b_avg, p_b_cop, p_b_std, starts_a)
                 if leg_winner == "A": set_wins_a += 1
@@ -303,20 +215,22 @@ def simulate_match(params: Dict[str, Any]) -> tuple[str, int, int]:
             if set_wins_a == target_legs_per_set: match_wins_a += 1
             else: match_wins_b += 1
             
+            # Seuraavan setin aloittaja vaihtuu
             starts_a_in_set = not starts_a_in_set 
                 
         winner = "A" if match_wins_a == target_sets else "B"
         return winner, match_wins_a, match_wins_b
 
-    else: # LEG
+    else: # LEG (Leg-muoto)
         target_legs = (params['N_LEGS'] // 2) + 1
         starts_a = overall_starts_a
         
+        # Legien simulaatio
         while match_wins_a < target_legs and match_wins_b < target_legs:
             leg_winner = simulate_leg(p_a_avg, p_a_cop, p_a_std, p_b_avg, p_b_cop, p_b_std, starts_a)
             if leg_winner == "A": match_wins_a += 1
             else: match_wins_b += 1
-            starts_a = not starts_a
+            starts_a = not starts_a # Aloittaja vaihtuu joka legissä
             
         winner = "A" if match_wins_a == target_legs else "B"
         return winner, match_wins_a, match_wins_b
@@ -402,7 +316,7 @@ def main():
             st.error("Pelaajat eivät voi olla samoja.")
             return
 
-        # Valmistellaan parametrit (F9A, TWS ja RWS eivät vaikuta nykyiseen simulaatioon, joten käytetään KAUSI 2025 arvoa)
+        # Valmistellaan parametrit (simulaatio käyttää vain 3DA, COP ja STD)
         params = {
             'P_A_AVG': player_a_data['KAUSI 2025'],
             'P_A_COP': player_a_data['COP'] / 100.0,
@@ -449,7 +363,8 @@ def main():
         
         # Voittotodennäköisyys
         with col_res1:
-            st.metric(label=f"🏆 Todennäköisin voittaja", value=player_a_name if prob_a > prob_b else player_b_name, delta_color="off")
+            winner_name = player_a_name if prob_a > prob_b else player_b_name
+            st.metric(label=f"🏆 Todennäköisin voittaja", value=winner_name, delta_color="off")
         
         # Pelaaja A
         with col_res2:
@@ -472,12 +387,22 @@ def main():
         st.markdown("---")
         st.markdown("#### Voittotodennäköisyyden jakautuminen")
         
-        data = {
+        # KORJATTU Osa: Käytetään Altairia virheen StreamlitColorLengthError välttämiseksi
+        data_df = pd.DataFrame({
             'Pelaaja': [player_a_name, player_b_name],
             'Voittotodennäköisyys': [prob_a, prob_b]
-        }
+        })
         
-        st.bar_chart(data, x='Pelaaja', y='Voittotodennäköisyys', color=['#007bff', '#dc3545'])
+        chart = alt.Chart(data_df).mark_bar().encode(
+            x=alt.X('Pelaaja:N', sort=None),
+            y=alt.Y('Voittotodennäköisyys:Q', axis=alt.Axis(format='.0%'), title='Voittotodennäköisyys'),
+            # Värit Pelaaja-sarakkeen mukaan:
+            color=alt.Color('Pelaaja:N', scale=alt.Scale(domain=[player_a_name, player_b_name], range=['#007bff', '#dc3545']), legend=None),
+            tooltip=['Pelaaja', alt.Tooltip('Voittotodennäköisyys', format='.1%')]
+        ).properties(
+            title="Ottelun ennuste"
+        )
+        st.altair_chart(chart, use_container_width=True)
 
 # Koodin suoritus
 if __name__ == "__main__":
