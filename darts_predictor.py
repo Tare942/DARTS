@@ -4,26 +4,67 @@ import json
 import os
 
 # --- 1. Optimal Checkout Taulukko & Apumuuttujat ---
-# LISÄÄ TÄHÄN KOKO CHECKOUT_MAP!
 CHECKOUT_MAP = {
     170: ["T20", "T20", "Bull"], 167: ["T20", "T19", "Bull"], 164: ["T20", "T18", "Bull"], 161: ["T20", "T17", "Bull"],
     160: ["T20", "T20", "D20"], 158: ["T20", "T20", "D19"], 157: ["T20", "T19", "D20"], 156: ["T20", "T20", "D18"],
-    # HUOM: Täytä loput taulukosta tähän
     155: ["T20", "T19", "D19"], 154: ["T20", "T18", "D20"], 153: ["T20", "T19", "D18"], 152: ["T20", "T18", "D19"],
     151: ["T20", "T17", "D20"], 150: ["T20", "T18", "D18"], 149: ["T20", "T19", "D16"], 148: ["T20", "T16", "D20"],
-    # ... (loput checkout-kartasta) ...
-    4: ["D2"], 3: ["S1", "D1"], 2: ["D1"]
+    147: ["T20", "T17", "D18"], 146: ["T20", "T18", "D16"], 145: ["T20", "T15", "D20"], 144: ["T20", "T16", "D16"],
+    143: ["T20", "T17", "D16"], 142: ["T20", "T14", "D20"], 141: ["T20", "T19", "D12"], 140: ["T20", "T20", "D10"],
+    139: ["T20", "T13", "D20"], 138: ["T20", "T18", "D12"], 137: ["T20", "T19", "D10"], 136: ["T20", "T16", "D14"],
+    135: ["T20", "T17", "D12"], 134: ["T20", "T14", "D16"], 133: ["T20", "T19", "D8"], 132: ["T20", "T16", "D12"],
+    131: ["T20", "T13", "D16"], 130: ["T20", "T10", "D20"], 129: ["T19", "T16", "D12"], 128: ["T18", "T14", "D16"],
+    127: ["T20", "T17", "D8"], 126: ["T19", "T19", "D6"], 125: ["Bull", "T19", "D18"], 124: ["T20", "T14", "D11"],
+    123: ["T19", "T16", "D9"], 122: ["T18", "T18", "D7"], 121: ["T20", "T11", "D14"], 120: ["T20", "S20", "D20"],
+    119: ["T19", "S20", "D20"], 118: ["T20", "S18", "D20"], 117: ["T20", "S17", "D20"], 116: ["T20", "S16", "D20"],
+    115: ["T20", "S15", "D20"], 114: ["T20", "S14", "D20"], 113: ["T20", "S13", "D20"], 112: ["T20", "S12", "D20"],
+    111: ["T20", "S19", "D16"], 110: ["T20", "S10", "D20"], 109: ["T20", "S19", "D15"], 108: ["T20", "S16", "D16"],
+    107: ["T20", "S17", "D15"], 106: ["T20", "S18", "D14"], 105: ["T20", "S13", "D16"], 104: ["T20", "S12", "D16"],
+    103: ["T19", "S14", "D20"], 102: ["T20", "S10", "D16"], 101: ["T17", "S10", "D20"], 100: ["T20", "S20", "D20"],
+    99: ["T19", "S10", "D16"], 98: ["T20", "D19"], 97: ["T19", "D20"], 96: ["T20", "D18"], 95: ["T19", "D19"], 94: ["T18", "D20"],
+    93: ["T19", "D18"], 92: ["T20", "D16"], 91: ["T17", "D20"], 90: ["T20", "D15"], 89: ["T19", "D16"], 88: ["T20", "D14"],
+    87: ["T17", "D18"], 86: ["T18", "D16"], 85: ["T19", "D14"], 84: ["T20", "D12"], 83: ["T17", "D16"], 82: ["T15", "D18"],
+    81: ["T19", "D12"], 80: ["T20", "D10"], 79: ["T19", "D11"], 78: ["T18", "D12"], 77: ["T15", "D16"], 76: ["T20", "D8"],
+    75: ["T17", "D12"], 74: ["T14", "D16"], 73: ["T19", "D8"], 72: ["T12", "D18"], 71: ["T13", "D16"], 70: ["T10", "D20"],
+    69: ["T15", "D12"], 68: ["T12", "D16"], 67: ["T17", "D8"], 66: ["T10", "D18"], 65: ["Bull", "D20"], 64: ["T16", "D8"],
+    63: ["T13", "D12"], 62: ["T10", "D16"], 61: ["T15", "D8"], 60: ["S20", "D20"], 59: ["S19", "D20"], 58: ["S18", "D20"],
+    57: ["S17", "D20"], 56: ["S16", "D20"], 55: ["S15", "D20"], 54: ["S14", "D20"], 53: ["S13", "D20"], 52: ["S12", "D20"],
+    51: ["S11", "D20"], 50: ["S10", "D20"], 49: ["T17", "D4"], 48: ["S16", "D16"], 47: ["S7", "D20"], 46: ["S6", "D20"],
+    45: ["S13", "D16"], 44: ["S4", "D20"], 43: ["S3", "D20"], 42: ["S10", "D16"], 41: ["S9", "D16"], 40: ["D20"], 39: ["S7", "D16"],
+    38: ["S18", "D10"], 37: ["S5", "D16"], 36: ["D18"], 35: ["S3", "D16"], 34: ["D17"], 33: ["S1", "D16"], 32: ["D16"], 31: ["S15", "D8"],
+    30: ["D15"], 29: ["S13", "D8"], 28: ["D14"], 27: ["S11", "D8"], 26: ["D13"], 25: ["S9", "D8"], 24: ["D12"], 23: ["S7", "D8"],
+    22: ["D11"], 21: ["S5", "D8"], 20: ["D10"], 19: ["S3", "D8"], 18: ["D9"], 17: ["S1", "D8"], 16: ["D8"], 15: ["S7", "D4"],
+    14: ["D7"], 13: ["S5", "D4"], 12: ["D6"], 11: ["S3", "D4"], 10: ["D5"], 9: ["S1", "D4"], 8: ["D4"], 7: ["S3", "D2"],
+    6: ["D3"], 5: ["S1", "D2"], 4: ["D2"], 3: ["S1", "D1"], 2: ["D1"]
 }
 SCORING_MAP = {"S": 1, "D": 2, "T": 3, "Bull": 50, "B": 50}
 
-# --- 2. Päivitetyt Pelaajaprofiilit (PDC Top 20) ---
+# --- 2. Päivitetyt Pelaajaprofiilit (Globaalit määritykset) ---
 DEFAULT_PRESETS = {
     "VALITSE PROFIILI": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
     "--- PDC TOP 20 (2024 Arviot) ---": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
     "Luke Littler (1)": {"KAUSI": 100.96, "VIIMEISET 5": 101.5, "COP": 41, "STD": 16},
     "Luke Humphries (2)": {"KAUSI": 98.50, "VIIMEISET 5": 99.0, "COP": 39, "STD": 17},
     "M. van Gerwen (3)": {"KAUSI": 97.28, "VIIMEISET 5": 98.96, "COP": 41, "STD": 18},
-    # HUOM: Täytä loput profiileista tähän
+    "Josh Rock (4)": {"KAUSI": 98.10, "VIIMEISET 5": 98.5, "COP": 36, "STD": 18},
+    "Stephen Bunting (5)": {"KAUSI": 98.04, "VIIMEISET 5": 97.8, "COP": 37, "STD": 18},
+    "Gerwyn Price (6)": {"KAUSI": 97.75, "VIIMEISET 5": 97.3, "COP": 36, "STD": 19},
+    "Gian van Veen (7)": {"KAUSI": 97.91, "VIIMEISET 5": 97.2, "COP": 33, "STD": 19},
+    "Gary Anderson (8)": {"KAUSI": 97.41, "VIIMEISET 5": 97.8, "COP": 35, "STD": 17},
+    "Chris Dobey (9)": {"KAUSI": 96.76, "VIIMEISET 5": 97.1, "COP": 34, "STD": 19},
+    "Dirk van Duijvenbode (10)": {"KAUSI": 96.53, "VIIMEISET 5": 96.8, "COP": 34, "STD": 20},
+    "Ross Smith (11)": {"KAUSI": 96.50, "VIIMEISET 5": 96.0, "COP": 33, "STD": 20},
+    "Jonny Clayton (12)": {"KAUSI": 96.30, "VIIMEISET 5": 96.0, "COP": 34, "STD": 20},
+    "Wessel Nijman (13)": {"KAUSI": 95.86, "VIIMEISET 5": 95.5, "COP": 32, "STD": 21},
+    "Ryan Searle (14)": {"KAUSI": 95.76, "VIIMEISET 5": 96.0, "COP": 33, "STD": 20},
+    "Rob Cross (15)": {"KAUSI": 95.75, "VIIMEISET 5": 96.5, "COP": 34, "STD": 20},
+    "Nathan Aspinall (16)": {"KAUSI": 95.64, "VIIMEISET 5": 95.3, "COP": 34, "STD": 20},
+    "Jermaine Wattimena (17)": {"KAUSI": 94.87, "VIIMEISET 5": 95.0, "COP": 32, "STD": 21},
+    "Damon Heta (18)": {"KAUSI": 94.81, "VIIMEISET 5": 95.5, "COP": 35, "STD": 20},
+    "James Wade (19)": {"KAUSI": 94.79, "VIIMEISET 5": 94.0, "COP": 38, "STD": 20},
+    "Danny Noppert (20)": {"KAUSI": 94.79, "VIIMEISET 5": 95.0, "COP": 37, "STD": 20},
+    "--- HARRASTAJAT ---": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
+    "Epätasainen (Aloittelija)": {"KAUSI": 80.0, "VIIMEISET 5": 80.0, "COP": 28, "STD": 25},
     "Hyvä Harrastaja": {"KAUSI": 90.0, "VIIMEISET 5": 90.0, "COP": 33, "STD": 20}
 }
 PLAYER_PRESETS = DEFAULT_PRESETS.copy()
@@ -31,6 +72,8 @@ CUSTOM_PRESET_FILE = "custom_presets.json"
 
 
 # --- 3. Simulaatiofunktiot (Muuttumattomat) ---
+
+# ... (Kaikki simulate_score, attempt_checkout, simulate_leg, simulate_match -funktiot pysyvät samoina) ...
 
 def get_hit_score(segment):
     if segment in ["Bull", "B"]: return 50
@@ -131,7 +174,7 @@ def simulate_match(params):
 def load_custom_presets():
     """
     Lataa käyttäjän luomat profiilit tiedostosta.
-    KORJATTU: Global-muuttujat määritelty oikein.
+    KORJATTU: Varmistettu kaikkien globaalien muuttujien käyttö.
     """
     global PLAYER_PRESETS, DEFAULT_PRESETS, CUSTOM_PRESET_FILE 
     
@@ -140,6 +183,7 @@ def load_custom_presets():
             with open(CUSTOM_PRESET_FILE, 'r') as f:
                 custom_data = json.load(f)
             
+            # Tässä saattaa olla ongelma, jos DEFAULT_PRESETS on tyhjä, mutta sen pitäisi olla OK
             PLAYER_PRESETS = DEFAULT_PRESETS.copy()
             PLAYER_PRESETS.update(custom_data)
         except Exception:
@@ -165,7 +209,7 @@ def save_custom_presets():
 def update_player_inputs(player_id):
     """
     Päivittää pelaajan syötekentät valitun profiilin perusteella.
-    KORJATTU: Käyttää global-muuttujaa PLAYER_PRESETS.
+    KORJATTU: Varmistettu PLAYER_PRESETS:in globaali käyttö.
     """
     global PLAYER_PRESETS 
     
@@ -240,17 +284,18 @@ def run_simulation(params, result_placeholder, progress_placeholder):
 
 def main():
     """Streamlit-sovelluksen pääfunktio."""
-    # Varmista, että kaikki globaalit muuttujat ladataan oikein
+    
+    # 1. Lataa mukautetut profiilit
     load_custom_presets() 
     
     st.set_page_config(page_title="Darts-ennustin (Monte Carlo)", layout="wide")
     st.title("🎯 Darts-ennustin (Monte Carlo-simulaatio)")
     st.markdown("---")
 
-    # --- Session State (Tilanhallinta) ---
+    # 2. Session State - Alustus
     if 'preset_A' not in st.session_state:
-        # Alusta tila käyttäen globaaleja arvoja
-        default_data = PLAYER_PRESETS["VALITSE PROFIILI"]
+        # TÄMÄ KUTSU NYT VASTA load_custom_presets() JÄLKEEN
+        default_data = PLAYER_PRESETS["VALITSE PROFIILI"] 
         st.session_state['preset_A'] = "VALITSE PROFIILI"
         st.session_state['preset_B'] = "VALITSE PROFIILI"
         st.session_state['form_A'] = "KAUSI"
@@ -269,7 +314,6 @@ def main():
     st.header("1. Pelaajien Parametrit")
     col_a, col_b = st.columns(2)
 
-    # Pelaaja A
     with col_a:
         st.subheader("Pelaaja A")
         
@@ -279,7 +323,6 @@ def main():
         st.number_input("COP (%) (Checkout-prosentti)", min_value=0, max_value=100, key='cop_A')
         st.number_input("STD DEV (Keskiarvon Keskihajonta)", key='std_A')
         
-    # Pelaaja B
     with col_b:
         st.subheader("Pelaaja B")
         
