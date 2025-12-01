@@ -249,7 +249,7 @@ def main():
     default_b_index = player_options.index("Michael van Gerwen (3)") if "Michael van Gerwen (3)" in player_options else 0
     
     with col1:
-        st.subheader("Pelaaja A (Musta hevonen)")
+        st.subheader("Pelaaja A ")
         player_a_name = st.selectbox("Valitse Pelaaja A", options=player_options, index=default_a_index)
         st.markdown(f"**Valittu:** **{player_a_name}**")
         
@@ -267,7 +267,7 @@ def main():
         )
 
     with col2:
-        st.subheader("Pelaaja B (Haastaja)")
+        st.subheader("Pelaaja B ")
         player_b_name = st.selectbox("Valitse Pelaaja B", options=player_options, index=default_b_index)
         st.markdown(f"**Valittu:** **{player_b_name}**")
         
