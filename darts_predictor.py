@@ -286,7 +286,7 @@ def main():
     """Streamlit-sovelluksen pääfunktio."""
     
     # 1. Lataa mukautetut profiilit
-    load_custom_presets() 
+    load_custom_presets()<-- KOMMENTOI TÄMÄ RIVI POIS
     
     st.set_page_config(page_title="Darts-ennustin (Monte Carlo)", layout="wide")
     st.title("🎯 Darts-ennustin (Monte Carlo-simulaatio)")
