@@ -40,7 +40,6 @@ CHECKOUT_MAP = {
 SCORING_MAP = {"S": 1, "D": 2, "T": 3, "Bull": 50, "B": 50}
 
 # --- 2. Päivitetyt Pelaajaprofiilit (Globaalit määritykset) ---
-# Nämä ovat nyt vain oletusarvoja, jotka ladataan Session Stateen
 DEFAULT_PRESETS = {
     "VALITSE PROFIILI": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
     "--- PDC TOP 20 (2024 Arviot) ---": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
@@ -167,23 +166,20 @@ def simulate_match(params):
         return "A" if match_wins_a == target_legs else "B"
 
 
-# --- 4. Profiilien hallinta Session Statella (KORJATTU) ---
+# --- 4. Profiilien hallinta Session Statella (Korjattu) ---
 
 def load_custom_presets():
-    """
-    Lataa profiilit tiedostosta ja alustaa ne Streamlitin Session Stateen.
-    Tämä korjaa NameErrorin, koska se tarkistaa Session Staten ennen latausta.
-    """
+    """Lataa profiilit tiedostosta ja alustaa ne Session Stateen."""
+    # Global-muuttujat tarvitaan tiedostoa varten
     global DEFAULT_PRESETS, CUSTOM_PRESET_FILE 
     
-    # 1. Tarkista, onko profiilit jo ladattu Session Stateen
+    # Tarkista, onko profiilit jo ladattu Session Stateen
     if 'PLAYER_PRESETS' in st.session_state:
         return 
 
-    # 2. Alustetaan Session State DEFAULT_PRESETS-arvoilla
     current_presets = DEFAULT_PRESETS.copy()
     
-    # 3. Yritetään ladata mukautetut profiilit tiedostosta
+    # Yritetään ladata mukautetut profiilit tiedostosta
     if os.path.exists(CUSTOM_PRESET_FILE):
         try:
             with open(CUSTOM_PRESET_FILE, 'r') as f:
@@ -192,14 +188,15 @@ def load_custom_presets():
         except Exception:
             pass 
             
-    # 4. Tallennetaan lopullinen sanakirja Session Stateen
+    # Tallennetaan lopullinen sanakirja Session Stateen
     st.session_state['PLAYER_PRESETS'] = current_presets
 
 def save_custom_presets():
     """Tallentaa vain käyttäjän luomat profiilit Session Statesta JSON-tiedostoon."""
+    # Global-muuttujat tarvitaan tiedostoa varten
     global DEFAULT_PRESETS, CUSTOM_PRESET_FILE
     
-    # Käytetään Session Staten dataa
+    # Käytetään Session Staten dataa (tai oletusarvoja, jos ei vielä ladattu)
     all_presets = st.session_state.get('PLAYER_PRESETS', DEFAULT_PRESETS)
     
     custom_data = {
@@ -218,14 +215,13 @@ def save_custom_presets():
 def update_player_inputs(player_id):
     """Päivittää pelaajan syötekentät valitun profiilin perusteella Session Statesta."""
     
+    # Käytetään Session Statea
+    player_presets = st.session_state['PLAYER_PRESETS']
     preset_key = st.session_state[f'preset_{player_id}']
     form_key = st.session_state[f'form_{player_id}']
     
     if "---" in preset_key:
         return
-
-    # HAKU SESSION STATEN KAUTTA:
-    player_presets = st.session_state['PLAYER_PRESETS'] 
     
     data = player_presets.get(preset_key, player_presets["VALITSE PROFIILI"])
     
@@ -236,12 +232,13 @@ def update_player_inputs(player_id):
     st.session_state[f'avg_{player_id}'] = f"{new_avg:.2f}"
 
 def run_simulation(params, result_placeholder, progress_placeholder):
-    """Suorittaa Monte Carlo -simulaation ja päivittää Streamlit-komponentteja."""
+    """Suorittaa Monte Carlo -simulaation ja päivittää Streamlit-komponentteja (sisältää edistymispalkin)."""
     
     a_wins = 0
     b_wins = 0
     n = params['N_SIMULATIONS']
     
+    # Luo edistymispalkki placeholderiin
     progress_bar = progress_placeholder.progress(0, text="Käynnistetään simulaatio...")
     
     update_interval = max(1, n // 100) 
@@ -265,6 +262,7 @@ def run_simulation(params, result_placeholder, progress_placeholder):
     p_b_name = st.session_state['preset_B'] if st.session_state['preset_B'] != "VALITSE PROFIILI" else "Pelaaja B"
 
     # Näytä tulokset
+    progress_placeholder.empty() # Piilota edistymispalkki
     result_placeholder.empty()
     with result_placeholder.container():
         st.subheader("✨ LOPULLINEN ENNUSTE ✨")
@@ -293,16 +291,20 @@ def run_simulation(params, result_placeholder, progress_placeholder):
 def main():
     """Streamlit-sovelluksen pääfunktio."""
     
-    # 1. Lataa mukautetut profiilit Streamlitin tilaan (Session State)
-    load_custom_presets() 
+    # --- ALUSTUS TÄSSÄ ---
+    
+    # ALUSTA PROFIILIT: Jos Session State ei sisällä profiileja, käytä DEFAULT_PRESETS-arvoja
+    if 'PLAYER_PRESETS' not in st.session_state:
+        # Ladataan vain oletusarvot, jos tiedostosta lataus epäonnistuu
+        st.session_state['PLAYER_PRESETS'] = DEFAULT_PRESETS.copy() 
+        # HUOM: load_custom_presets() voidaan kutsua myöhemmin napin painalluksesta, mutta ei käynnistyksessä.
     
     st.set_page_config(page_title="Darts-ennustin (Monte Carlo)", layout="wide")
     st.title("🎯 Darts-ennustin (Monte Carlo-simulaatio)")
     st.markdown("---")
 
-    # 2. Session State - Alustus (KÄYTÄTTE SESSION STATEA TÄSSÄ)
+    # Session State - Alustus (Käyttää alustettua Session Statea)
     if 'preset_A' not in st.session_state:
-        # HAE ARVOT SESSION STATEN kautta:
         default_data = st.session_state['PLAYER_PRESETS']["VALITSE PROFIILI"] 
         st.session_state['preset_A'] = "VALITSE PROFIILI"
         st.session_state['preset_B'] = "VALITSE PROFIILI"
@@ -325,7 +327,6 @@ def main():
     with col_a:
         st.subheader("Pelaaja A")
         
-        # PROFIILIVALIKKO KÄYTTÄÄ SESSION STATEA
         st.selectbox("Profiili (A)", options=list(st.session_state['PLAYER_PRESETS'].keys()), key='preset_A', on_change=lambda: update_player_inputs('A'))
         st.selectbox("3DA Muoto (A)", options=["KAUSI", "VIIMEISET 5"], key='form_A', on_change=lambda: update_player_inputs('A'))
         st.text_input("3DA (Kolmen tikan keskiarvo)", key='avg_A')
@@ -335,7 +336,6 @@ def main():
     with col_b:
         st.subheader("Pelaaja B")
         
-        # PROFIILIVALIKKO KÄYTTÄÄ SESSION STATEA
         st.selectbox("Profiili (B)", options=list(st.session_state['PLAYER_PRESETS'].keys()), key='preset_B', on_change=lambda: update_player_inputs('B'))
         st.selectbox("3DA Muoto (B)", options=["KAUSI", "VIIMEISET 5"], key='form_B', on_change=lambda: update_player_inputs('B'))
         st.text_input("3DA (Kolmen tikan keskiarvo)", key='avg_B')
