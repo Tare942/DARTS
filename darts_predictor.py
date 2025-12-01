@@ -155,37 +155,37 @@ match_type = params['MATCH_TYPE']
 match_wins_a = 0
 match_wins_b = 0
     
-    if match_type == "SET":
-        target_sets = (params['N_SETS'] // 2) + 1
-        target_legs_per_set = 3 
+if match_type == "SET":
+target_sets = (params['N_SETS'] // 2) + 1
+target_legs_per_set = 3 
         
-        while match_wins_a < target_sets and match_wins_b < target_sets:
-            set_wins_a = 0
-            set_wins_b = 0
-            starts_a = np.random.rand() < 0.5 
+while match_wins_a < target_sets and match_wins_b < target_sets:
+set_wins_a = 0
+set_wins_b = 0
+starts_a = np.random.rand() < 0.5 
             
-            while set_wins_a < target_legs_per_set and set_wins_b < target_legs_per_set:
-                leg_winner = simulate_leg(p_a_avg, p_a_cop, p_a_std, p_b_avg, p_b_cop, p_b_std, starts_a)
-                if leg_winner == "A": set_wins_a += 1
-                else: set_wins_b += 1
-                starts_a = not starts_a 
+while set_wins_a < target_legs_per_set and set_wins_b < target_legs_per_set:
+leg_winner = simulate_leg(p_a_avg, p_a_cop, p_a_std, p_b_avg, p_b_cop, p_b_std, starts_a)
+if leg_winner == "A": set_wins_a += 1
+else: set_wins_b += 1
+starts_a = not starts_a 
                 
-            if set_wins_a == target_legs_per_set: match_wins_a += 1
-            else: match_wins_b += 1
+if set_wins_a == target_legs_per_set: match_wins_a += 1
+else: match_wins_b += 1
                 
-        return "A" if match_wins_a == target_sets else "B"
+return "A" if match_wins_a == target_sets else "B"
 
-    else: # LEG
-        target_legs = (params['N_LEGS'] // 2) + 1
-        starts_a = np.random.rand() < 0.5 
+else: # LEG
+target_legs = (params['N_LEGS'] // 2) + 1
+starts_a = np.random.rand() < 0.5 
         
-        while match_wins_a < target_legs and match_wins_b < target_legs:
-            leg_winner = simulate_leg(p_a_avg, p_a_cop, p_a_std, p_b_avg, p_b_cop, p_b_std, starts_a)
-            if leg_winner == "A": match_wins_a += 1
-            else: match_wins_b += 1
-            starts_a = not starts_a
+while match_wins_a < target_legs and match_wins_b < target_legs:
+leg_winner = simulate_leg(p_a_avg, p_a_cop, p_a_std, p_b_avg, p_b_cop, p_b_std, starts_a)
+if leg_winner == "A": match_wins_a += 1
+else: match_wins_b += 1
+starts_a = not starts_a
             
-        return "A" if match_wins_a == target_legs else "B"
+return "A" if match_wins_a == target_legs else "B"
 
 
 # --- 4. Sovelluksen luokka ---
