@@ -41,48 +41,48 @@ SCORING_MAP = {"S": 1, "D": 2, "T": 3, "Bull": 50, "B": 50}
 
 # --- 2. Päivitetyt Pelaajaprofiilit (Globaalit määritykset) ---
 DEFAULT_PRESETS = {
-    "VALITSE PROFIILI": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
-    "--- PDC TOP 32 (Arviot) ---": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
+    "VALITSE PROFIILI": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18},
+    "--- PDC TOP 32 (Arviot) ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18},
     
-    # Kärkipelaajat (Sijoilla 1-20 olevat pelaajat on päivitetty)
-    "Luke Littler (1)": {"KAUSI": 99,33, "VIIMEISET 5": 101.5, "COP": 41, "STD": 16},
-    "Luke Humphries (2)": {"KAUSI": 95,71, "VIIMEISET 5": 99.0, "COP": 39, "STD": 17},
-    "Michael van Gerwen (3)": {"KAUSI": 99,93, "VIIMEISET 5": 98.96, "COP": 41, "STD": 18},
-    "Stephen Bunting (4)": {"KAUSI": 94,79, "VIIMEISET 5": 97.8, "COP": 37, "STD": 18},
-    "Jonny Clayton (5)": {"KAUSI": 94,86, "VIIMEISET 5": 96.0, "COP": 34, "STD": 20},
-    "Danny Noppert (6)": {"KAUSI": 94.31, "VIIMEISET 5": 95.0, "COP": 37, "STD": 20},
-    "James Wade (7)": {"KAUSI": 94.47, "VIIMEISET 5": 94.0, "COP": 38, "STD": 20},
-    "Chris Dobey (8)": {"KAUSI": 95.24, "VIIMEISET 5": 97.1, "COP": 34, "STD": 19},
-    "Gerwyn Price (9)": {"KAUSI": 96.76, "VIIMEISET 5": 97.3, "COP": 36, "STD": 19},
-    "Gian van Veen (10)": {"KAUSI": 93.25, "VIIMEISET 5": 97.2, "COP": 33, "STD": 19},
-    "Josh Rock (11)": {"KAUSI": 97.46, "VIIMEISET 5": 98.5, "COP": 36, "STD": 18},
-    "Ross Smith (12)": {"KAUSI": 94.86, "VIIMEISET 5": 96.0, "COP": 33, "STD": 20},
-    "Martin Schindler (13)": {"KAUSI": 93.16, "VIIMEISET 5": 95.8, "COP": 33, "STD": 20},
-    "Gary Anderson (14)": {"KAUSI": 97.82, "VIIMEISET 5": 97.8, "COP": 35, "STD": 17},
-    "Nathan Aspinall (15)": {"KAUSI": 95.22, "VIIMEISET 5": 95.3, "COP": 34, "STD": 20},
-    "Damon Heta (16)": {"KAUSI": 94.60, "VIIMEISET 5": 95.5, "COP": 35, "STD": 20},
-    "Rob Cross (17)": {"KAUSI": 97.10, "VIIMEISET 5": 96.5, "COP": 34, "STD": 20},
-    "Mike De Decker (18)": {"KAUSI": 91.56, "VIIMEISET 5": 94.5, "COP": 33, "STD": 20},
-    "Jermaine Wattimena (19)": {"KAUSI": 93.48, "VIIMEISET 5": 95.0, "COP": 32, "STD": 21},
-    "Ryan Searle (20)": {"KAUSI": 93.88, "VIIMEISET 5": 96.0, "COP": 33, "STD": 20},
+    # Kärkipelaajat
+    "Luke Littler (1)": {"KA": 100.96, "KAUSI 2025": 101.5, "COP": 41, "STD": 16},
+    "Luke Humphries (2)": {"KA": 98.50, "KAUSI 2025": 99.0, "COP": 39, "STD": 17},
+    "Michael van Gerwen (3)": {"KA": 97.28, "KAUSI 2025": 98.96, "COP": 41, "STD": 18},
+    "Stephen Bunting (4)": {"KA": 98.04, "KAUSI 2025": 97.8, "COP": 37, "STD": 18},
+    "Jonny Clayton (5)": {"KA": 96.30, "KAUSI 2025": 96.0, "COP": 34, "STD": 20},
+    "Danny Noppert (6)": {"KA": 94.79, "KAUSI 2025": 95.0, "COP": 37, "STD": 20},
+    "James Wade (7)": {"KA": 94.79, "KAUSI 2025": 94.0, "COP": 38, "STD": 20},
+    "Chris Dobey (8)": {"KA": 96.76, "KAUSI 2025": 97.1, "COP": 34, "STD": 19},
+    "Gerwyn Price (9)": {"KA": 97.75, "KAUSI 2025": 97.3, "COP": 36, "STD": 19},
+    "Gian van Veen (10)": {"KA": 97.91, "KAUSI 2025": 97.2, "COP": 33, "STD": 19},
+    "Josh Rock (11)": {"KA": 98.10, "KAUSI 2025": 98.5, "COP": 36, "STD": 18},
+    "Ross Smith (12)": {"KA": 96.50, "KAUSI 2025": 96.0, "COP": 33, "STD": 20},
+    "Martin Schindler (13)": {"KA": 95.50, "KAUSI 2025": 95.8, "COP": 33, "STD": 20},
+    "Gary Anderson (14)": {"KA": 97.41, "KAUSI 2025": 97.8, "COP": 35, "STD": 17},
+    "Nathan Aspinall (15)": {"KA": 95.64, "KAUSI 2025": 95.3, "COP": 34, "STD": 20},
+    "Damon Heta (16)": {"KA": 94.81, "KAUSI 2025": 95.5, "COP": 35, "STD": 20},
+    "Rob Cross (17)": {"KA": 95.75, "KAUSI 2025": 96.5, "COP": 34, "STD": 20},
+    "Mike De Decker (18)": {"KA": 95.0, "KAUSI 2025": 94.5, "COP": 33, "STD": 20},
+    "Jermaine Wattimena (19)": {"KA": 94.87, "KAUSI 2025": 95.0, "COP": 32, "STD": 21},
+    "Ryan Searle (20)": {"KA": 95.76, "KAUSI 2025": 96.0, "COP": 33, "STD": 20},
     
-    # Uudet pelaajat (Sijoilla 21-32) - Arvot asteittain laskevat
-    "Dave Chisnall (21)": {"KAUSI": 95.65, "VIIMEISET 5": 95.0, "COP": 34, "STD": 20},
-    "Daryl Gurney (22)": {"KAUSI": 94.60, "VIIMEISET 5": 94.2, "COP": 33, "STD": 21},
-    "Dimitri Van den Bergh (23)": {"KAUSI": 93.31, "VIIMEISET 5": 93.8, "COP": 35, "STD": 20},
-    "Ryan Joyce (24)": {"KAUSI": 92.81, "VIIMEISET 5": 94.0, "COP": 32, "STD": 21},
-    "Luke Woodhouse (25)": {"KAUSI": 91.96, "VIIMEISET 5": 93.7, "COP": 32, "STD": 21},
-    "Cameron Menzies (26)": {"KAUSI": 91.50, "VIIMEISET 5": 93.5, "COP": 31, "STD": 22},
-    "Ritchie Edhouse (27)": {"KAUSI": 90.89, "VIIMEISET 5": 93.0, "COP": 32, "STD": 22},
-    "Michael Smith (28)": {"KAUSI": 95.38, "VIIMEISET 5": 95.5, "COP": 34, "STD": 19}, # Korkeampi 3DA/COP, koska ex-maailmanmestari
-    "Dirk van Duijvenbode (29)": {"KAUSI": 94.01, "VIIMEISET 5": 93.5, "COP": 33, "STD": 21},
-    "Peter Wright (30)": {"KAUSI": 96.42, "VIIMEISET 5": 94.0, "COP": 35, "STD": 20}, # Korkeampi COP ex-maailmanmestarina
-    "Wessel Nijman (31)": {"KAUSI": 92.63, "VIIMEISET 5": 93.2, "COP": 31, "STD": 22},
-    "Joe Cullen (32)": {"KAUSI": 93.01, "VIIMEISET 5": 94.5, "COP": 33, "STD": 20},
+    # Pelaajat 21-32
+    "Dave Chisnall (21)": {"KA": 94.50, "KAUSI 2025": 95.0, "COP": 34, "STD": 20},
+    "Daryl Gurney (22)": {"KA": 94.00, "KAUSI 2025": 94.2, "COP": 33, "STD": 21},
+    "Dimitri Van den Bergh (23)": {"KA": 94.20, "KAUSI 2025": 93.8, "COP": 35, "STD": 20},
+    "Ryan Joyce (24)": {"KA": 93.80, "KAUSI 2025": 94.0, "COP": 32, "STD": 21},
+    "Luke Woodhouse (25)": {"KA": 93.50, "KAUSI 2025": 93.7, "COP": 32, "STD": 21},
+    "Cameron Menzies (26)": {"KA": 93.30, "KAUSI 2025": 93.5, "COP": 31, "STD": 22},
+    "Ritchie Edhouse (27)": {"KA": 93.20, "KAUSI 2025": 93.0, "COP": 32, "STD": 22},
+    "Michael Smith (28)": {"KA": 94.60, "KAUSI 2025": 95.5, "COP": 34, "STD": 19}, 
+    "Dirk van Duijvenbode (29)": {"KA": 94.00, "KAUSI 2025": 93.5, "COP": 33, "STD": 21},
+    "Peter Wright (30)": {"KA": 93.50, "KAUSI 2025": 94.0, "COP": 35, "STD": 20}, 
+    "Wessel Nijman (31)": {"KA": 93.00, "KAUSI 2025": 93.2, "COP": 31, "STD": 22},
+    "Joe Cullen (32)": {"KA": 94.20, "KAUSI 2025": 94.5, "COP": 33, "STD": 20},
 
-    "--- HARRASTAJAT ---": {"KAUSI": 95.0, "VIIMEISET 5": 95.0, "COP": 35, "STD": 18},
-    "Epätasainen (Aloittelija)": {"KAUSI": 80.0, "VIIMEISET 5": 80.0, "COP": 28, "STD": 25},
-    "Hyvä Harrastaja": {"KAUSI": 90.0, "VIIMEISET 5": 90.0, "COP": 33, "STD": 20}
+    "--- HARRASTAJAT ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18},
+    "Epätasainen (Aloittelija)": {"KA": 80.0, "KAUSI 2025": 80.0, "COP": 28, "STD": 25},
+    "Hyvä Harrastaja": {"KA": 90.0, "KAUSI 2025": 90.0, "COP": 33, "STD": 20}
 }
 CUSTOM_PRESET_FILE = "custom_presets.json"
 
@@ -239,7 +239,8 @@ def update_player_inputs(player_id):
     st.session_state[f'cop_{player_id}'] = data.get("COP", 35)
     st.session_state[f'std_{player_id}'] = data.get("STD", 18.0)
     
-    new_avg = data.get(form_key, data.get("KAUSI", 95.0))
+    # HUOM: 'KAUSI' ja 'VIIMEISET 5' on muutettu muotoon 'KA' ja 'KAUSI 2025'
+    new_avg = data.get(form_key, data.get("KA", 95.0))
     st.session_state[f'avg_{player_id}'] = f"{new_avg:.2f}"
 
 
@@ -305,8 +306,6 @@ def main():
     
     # --- ALUSTUS TÄSSÄ ---
     
-    # 1. ALUSTA PROFIILIT: Ladataan profiilit Session Stateen vain, jos niitä ei vielä ole siellä.
-    # KUTSUTAAN load_custom_presets() TÄMÄN FUNKTION SISÄLTÄ!
     load_custom_presets() 
     
     st.set_page_config(page_title="Darts-ennustin (Monte Carlo)", layout="wide")
@@ -318,12 +317,12 @@ def main():
         default_data = st.session_state['PLAYER_PRESETS']["VALITSE PROFIILI"] 
         st.session_state['preset_A'] = "VALITSE PROFIILI"
         st.session_state['preset_B'] = "VALITSE PROFIILI"
-        st.session_state['form_A'] = "KAUSI"
-        st.session_state['form_B'] = "KAUSI"
-        st.session_state['avg_A'] = f"{default_data['KAUSI']:.2f}"
+        st.session_state['form_A'] = "KA"
+        st.session_state['form_B'] = "KA"
+        st.session_state['avg_A'] = f"{default_data['KA']:.2f}"
         st.session_state['cop_A'] = default_data['COP']
         st.session_state['std_A'] = default_data['STD']
-        st.session_state['avg_B'] = f"{default_data['KAUSI']:.2f}"
+        st.session_state['avg_B'] = f"{default_data['KA']:.2f}"
         st.session_state['cop_B'] = default_data['COP']
         st.session_state['std_B'] = default_data['STD']
         
@@ -338,7 +337,7 @@ def main():
         st.subheader("Pelaaja A")
         
         st.selectbox("Profiili (A)", options=list(st.session_state['PLAYER_PRESETS'].keys()), key='preset_A', on_change=lambda: update_player_inputs('A'))
-        st.selectbox("3DA Muoto (A)", options=["KAUSI", "VIIMEISET 5"], key='form_A', on_change=lambda: update_player_inputs('A'))
+        st.selectbox("3DA Muoto (A)", options=["KA", "KAUSI 2025"], key='form_A', on_change=lambda: update_player_inputs('A'))
         st.text_input("3DA (Kolmen tikan keskiarvo)", key='avg_A')
         st.number_input("COP (%) (Checkout-prosentti)", min_value=0, max_value=100, key='cop_A')
         st.number_input("STD DEV (Keskiarvon Keskihajonta)", key='std_A')
@@ -347,7 +346,7 @@ def main():
         st.subheader("Pelaaja B")
         
         st.selectbox("Profiili (B)", options=list(st.session_state['PLAYER_PRESETS'].keys()), key='preset_B', on_change=lambda: update_player_inputs('B'))
-        st.selectbox("3DA Muoto (B)", options=["KAUSI", "VIIMEISET 5"], key='form_B', on_change=lambda: update_player_inputs('B'))
+        st.selectbox("3DA Muoto (B)", options=["KA", "KAUSI 2025"], key='form_B', on_change=lambda: update_player_inputs('B'))
         st.text_input("3DA (Kolmen tikan keskiarvo)", key='avg_B')
         st.number_input("COP (%) (Checkout-prosentti)", min_value=0, max_value=100, key='cop_B')
         st.number_input("STD DEV (Keskiarvon Keskihajonta)", key='std_B')
