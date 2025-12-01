@@ -166,20 +166,19 @@ def simulate_match(params):
         return "A" if match_wins_a == target_legs else "B"
 
 
-# --- 4. Profiilien hallinta Session Statella (Korjattu) ---
+# --- 4. Profiilien hallinta Session Statella (KÄYTÖSSÄ) ---
 
 def load_custom_presets():
     """Lataa profiilit tiedostosta ja alustaa ne Session Stateen."""
-    # Global-muuttujat tarvitaan tiedostoa varten
     global DEFAULT_PRESETS, CUSTOM_PRESET_FILE 
     
-    # Tarkista, onko profiilit jo ladattu Session Stateen
+    # 1. Tarkista, onko profiilit jo ladattu Session Stateen
     if 'PLAYER_PRESETS' in st.session_state:
         return 
 
     current_presets = DEFAULT_PRESETS.copy()
     
-    # Yritetään ladata mukautetut profiilit tiedostosta
+    # 2. Yritetään ladata mukautetut profiilit tiedostosta
     if os.path.exists(CUSTOM_PRESET_FILE):
         try:
             with open(CUSTOM_PRESET_FILE, 'r') as f:
@@ -188,15 +187,13 @@ def load_custom_presets():
         except Exception:
             pass 
             
-    # Tallennetaan lopullinen sanakirja Session Stateen
+    # 3. Tallennetaan lopullinen sanakirja Session Stateen
     st.session_state['PLAYER_PRESETS'] = current_presets
 
 def save_custom_presets():
     """Tallentaa vain käyttäjän luomat profiilit Session Statesta JSON-tiedostoon."""
-    # Global-muuttujat tarvitaan tiedostoa varten
     global DEFAULT_PRESETS, CUSTOM_PRESET_FILE
     
-    # Käytetään Session Staten dataa (tai oletusarvoja, jos ei vielä ladattu)
     all_presets = st.session_state.get('PLAYER_PRESETS', DEFAULT_PRESETS)
     
     custom_data = {
@@ -210,12 +207,9 @@ def save_custom_presets():
     except Exception as e:
         st.error(f"Mukautettujen profiilien tallentaminen epäonnistui: {e}")
 
-# --- 5. Streamlit GUI & Logiikka ---
-
 def update_player_inputs(player_id):
     """Päivittää pelaajan syötekentät valitun profiilin perusteella Session Statesta."""
     
-    # Käytetään Session Statea
     player_presets = st.session_state['PLAYER_PRESETS']
     preset_key = st.session_state[f'preset_{player_id}']
     form_key = st.session_state[f'form_{player_id}']
@@ -231,6 +225,9 @@ def update_player_inputs(player_id):
     new_avg = data.get(form_key, data.get("KAUSI", 95.0))
     st.session_state[f'avg_{player_id}'] = f"{new_avg:.2f}"
 
+
+# --- 5. Streamlit GUI & Logiikka (main-funktio) ---
+
 def run_simulation(params, result_placeholder, progress_placeholder):
     """Suorittaa Monte Carlo -simulaation ja päivittää Streamlit-komponentteja (sisältää edistymispalkin)."""
     
@@ -238,7 +235,6 @@ def run_simulation(params, result_placeholder, progress_placeholder):
     b_wins = 0
     n = params['N_SIMULATIONS']
     
-    # Luo edistymispalkki placeholderiin
     progress_bar = progress_placeholder.progress(0, text="Käynnistetään simulaatio...")
     
     update_interval = max(1, n // 100) 
@@ -261,8 +257,7 @@ def run_simulation(params, result_placeholder, progress_placeholder):
     p_a_name = st.session_state['preset_A'] if st.session_state['preset_A'] != "VALITSE PROFIILI" else "Pelaaja A"
     p_b_name = st.session_state['preset_B'] if st.session_state['preset_B'] != "VALITSE PROFIILI" else "Pelaaja B"
 
-    # Näytä tulokset
-    progress_placeholder.empty() # Piilota edistymispalkki
+    progress_placeholder.empty() 
     result_placeholder.empty()
     with result_placeholder.container():
         st.subheader("✨ LOPULLINEN ENNUSTE ✨")
@@ -293,17 +288,15 @@ def main():
     
     # --- ALUSTUS TÄSSÄ ---
     
-    # ALUSTA PROFIILIT: Jos Session State ei sisällä profiileja, käytä DEFAULT_PRESETS-arvoja
-    if 'PLAYER_PRESETS' not in st.session_state:
-        # Ladataan vain oletusarvot, jos tiedostosta lataus epäonnistuu
-        st.session_state['PLAYER_PRESETS'] = DEFAULT_PRESETS.copy() 
-        # HUOM: load_custom_presets() voidaan kutsua myöhemmin napin painalluksesta, mutta ei käynnistyksessä.
+    # 1. ALUSTA PROFIILIT: Ladataan profiilit Session Stateen vain, jos niitä ei vielä ole siellä.
+    # KUTSUTAAN load_custom_presets() TÄMÄN FUNKTION SISÄLTÄ!
+    load_custom_presets() 
     
     st.set_page_config(page_title="Darts-ennustin (Monte Carlo)", layout="wide")
     st.title("🎯 Darts-ennustin (Monte Carlo-simulaatio)")
     st.markdown("---")
 
-    # Session State - Alustus (Käyttää alustettua Session Statea)
+    # 2. Session State - Alustus (Käyttää PLAYER_PRESETS Session Statea)
     if 'preset_A' not in st.session_state:
         default_data = st.session_state['PLAYER_PRESETS']["VALITSE PROFIILI"] 
         st.session_state['preset_A'] = "VALITSE PROFIILI"
