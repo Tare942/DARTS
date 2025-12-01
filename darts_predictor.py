@@ -150,10 +150,10 @@ def simulate_match(params):
     
 p_a_avg, p_a_cop, p_a_std = params['P_A_AVG'], params['P_A_COP'], params['P_A_STD']
 p_b_avg, p_b_cop, p_b_std = params['P_B_AVG'], params['P_B_COP'], params['P_B_STD']
-    match_type = params['MATCH_TYPE']
+match_type = params['MATCH_TYPE']
     
-    match_wins_a = 0
-    match_wins_b = 0
+match_wins_a = 0
+match_wins_b = 0
     
     if match_type == "SET":
         target_sets = (params['N_SETS'] // 2) + 1
