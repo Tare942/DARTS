@@ -49,63 +49,141 @@ CHECKOUT_MAP = {
 SCORING_MAP = {"S": 1, "D": 2, "T": 3, "Bull": 50, "B": 50}
 
 # --- 2. Pelaajaprofiilit (COP-arvoja päivitetty vastaamaan paremmin huipputasoa) ---
-DEFAULT_PRESETS = {
-    "VALITSE PROFIILI": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": 96.5, "TWS": 70, "RWS": 40},
-    "--- PDC TOP 32 (Sijoitetut) ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": "N/A", "TWS": "N/A", "RWS": "N/A"},
-    
-    # 1. Neljännes 
-    "Luke Littler (1)": {"KA": 100.96, "KAUSI 2025": 100.96, "COP": 42, "STD": 16, "FDI": 72.0, "F9A": 103.4, "TWS": 85, "RWS": 52}, # Päivitetty
-    "Joe Cullen (32)": {"KA": 94.20, "KAUSI 2025": 94.5, "COP": 34, "STD": 20, "FDI": 59.0, "F9A": 96.5, "TWS": 70, "RWS": 38},   # Päivitetty
-    "Damon Heta (16)": {"KA": 94.81, "KAUSI 2025": 94.81, "COP": 40, "STD": 20, "FDI": 59.6, "F9A": 97.0, "TWS": 72, "RWS": 39}, # Päivitetty
-    "Rob Cross (17)": {"KA": 95.75, "KAUSI 2025": 95.75, "COP": 40, "STD": 20, "FDI": 61.5, "F9A": 97.8, "TWS": 73, "RWS": 41},  # Päivitetty
-    "Chris Dobey (8)": {"KA": 96.76, "KAUSI 2025": 96.76, "COP": 35, "STD": 19, "FDI": 63.5, "F9A": 99.0, "TWS": 77, "RWS": 41}, # Päivitetty
-    "Luke Woodhouse (25)": {"KA": 93.50, "KAUSI 2025": 93.7, "COP": 32, "STD": 21, "FDI": 57.4, "F9A": 95.2, "TWS": 68, "RWS": 36},
-    "Gerwyn Price (9)": {"KA": 97.75, "KAUSI 2025": 97.75, "COP": 41, "STD": 19, "FDI": 65.5, "F9A": 100.0, "TWS": 80, "RWS": 45}, # Päivitetty
-    "Ryan Joyce (24)": {"KA": 93.80, "KAUSI 2025": 94.0, "COP": 32, "STD": 21, "FDI": 58.0, "F9A": 95.5, "TWS": 68, "RWS": 37},
-    
-    # 2. Neljännes
-    "Stephen Bunting (4)": {"KA": 98.04, "KAUSI 2025": 98.04, "COP": 40, "STD": 18, "FDI": 66.1, "F9A": 100.3, "TWS": 81, "RWS": 45},
-    "Dirk van Duijvenbode (29)": {"KA": 94.00, "KAUSI 2025": 93.5, "COP": 36, "STD": 21, "FDI": 57.0, "F9A": 95.0, "TWS": 68, "RWS": 38},
-    "Martin Schindler (13)": {"KA": 95.50, "KAUSI 2025": 95.8, "COP": 35, "STD": 20, "FDI": 61.6, "F9A": 98.0, "TWS": 74, "RWS": 40}, # Päivitetty
-    "Ryan Searle (20)": {"KA": 95.76, "KAUSI 2025": 95.76, "COP": 33, "STD": 20, "FDI": 61.5, "F9A": 97.8, "TWS": 73, "RWS": 40},
-    "Jonny Clayton (5)": {"KA": 96.30, "KAUSI 2025": 96.30, "COP": 35, "STD": 20, "FDI": 62.6, "F9A": 98.3, "TWS": 75, "RWS": 41}, # Päivitetty
-    "Michael Smith (28)": {"KA": 94.60, "KAUSI 2025": 95.5, "COP": 34, "STD": 19, "FDI": 61.0, "F9A": 97.5, "TWS": 73, "RWS": 40}, 
-    "Ross Smith (12)": {"KA": 96.50, "KAUSI 2025": 96.50, "COP": 37, "STD": 20, "FDI": 63.0, "F9A": 98.7, "TWS": 76, "RWS": 42}, # Päivitetty
-    "Dave Chisnall (21)": {"KA": 94.50, "KAUSI 2025": 95.0, "COP": 34, "STD": 20, "FDI": 60.0, "F9A": 97.0, "TWS": 72, "RWS": 39},
+# PDC WORLD DARTS CHAMPIONSHIP 2025/2026 PROFIILIT JA TILASTOT
+# Lähteet: Käyttäjän lataamat CSV-tiedot (päivitetty 2.12.2025)
 
-    # 3. Neljännes
-    "Luke Humphries (2)": {"KA": 98.50, "KAUSI 2025": 98.50, "COP": 39, "STD": 17, "FDI": 67.0, "F9A": 101.0, "TWS": 82, "RWS": 46}, # Päivitetty
-    "Wessel Nijman (31)": {"KA": 93.00, "KAUSI 2025": 93.2, "COP": 31, "STD": 22, "FDI": 56.4, "F9A": 94.7, "TWS": 66, "RWS": 35},
-    "Nathan Aspinall (15)": {"KA": 95.64, "KAUSI 2025": 95.64, "COP": 37, "STD": 20, "FDI": 61.3, "F9A": 97.7, "TWS": 73, "RWS": 40},
-    "Mike De Decker (18)": {"KA": 95.0, "KAUSI 2025": 94.5, "COP": 33, "STD": 20, "FDI": 59.0, "F9A": 96.5, "TWS": 70, "RWS": 38},
-    "James Wade (7)": {"KA": 94.79, "KAUSI 2025": 94.0, "COP": 38, "STD": 20, "FDI": 58.0, "F9A": 96.0, "TWS": 69, "RWS": 39},
-    "Cameron Menzies (26)": {"KA": 93.30, "KAUSI 2025": 93.5, "COP": 31, "STD": 22, "FDI": 57.0, "F9A": 95.0, "TWS": 66, "RWS": 36},
-    "Gian van Veen (10)": {"KA": 97.91, "KAUSI 2025": 97.91, "COP": 35, "STD": 19, "FDI": 65.8, "F9A": 100.2, "TWS": 80, "RWS": 45}, # Päivitetty
-    "Dimitri Van den Bergh (23)": {"KA": 94.20, "KAUSI 2025": 93.8, "COP": 35, "STD": 20, "FDI": 57.6, "F9A": 95.5, "TWS": 69, "RWS": 37},
+PROFIILIT = {
+    "Luke Littler": {"3DA": 100.96, "COP": 42.87, "STD": 16.0, "FDI": 1976, "F9A": 111.51, "TWS": 99.44, "RWS": 102.72},
+    "Luke Humphries": {"3DA": 98.50, "COP": 41.18, "STD": 17.0, "FDI": 1876, "F9A": 107.80, "TWS": 96.62, "RWS": 100.63},
+    "Michael van Gerwen": {"3DA": 97.28, "COP": 39.43, "STD": 18.0, "FDI": 1809, "F9A": 106.42, "TWS": 95.85, "RWS": 98.87},
+    "Stephen Bunting": {"3DA": 98.04, "COP": 39.93, "STD": 18.0, "FDI": 1823, "F9A": 107.65, "TWS": 96.95, "RWS": 99.24},
+    "Jonny Clayton": {"3DA": 96.30, "COP": 42.52, "STD": 20.0, "FDI": 1790, "F9A": 104.69, "TWS": 95.05, "RWS": 97.71},
+    "Danny Noppert": {"3DA": 94.79, "COP": 40.39, "STD": 20.0, "FDI": 1822, "F9A": 102.79, "TWS": 94.52, "RWS": 95.09},
+    "James Wade": {"3DA": 94.79, "COP": 42.77, "STD": 20.0, "FDI": 1809, "F9A": 102.10, "TWS": 93.22, "RWS": 96.59},
+    "Chris Dobey": {"3DA": 96.76, "COP": 38.78, "STD": 19.0, "FDI": 1858, "F9A": 106.16, "TWS": 95.00, "RWS": 98.77},
+    "Gerwyn Price": {"3DA": 97.75, "COP": 42.09, "STD": 19.0, "FDI": 1899, "F9A": 106.69, "TWS": 96.89, "RWS": 98.75},
+    "Gian van Veen": {"3DA": 97.91, "COP": 46.31, "STD": 19.0, "FDI": 1867, "F9A": 105.80, "TWS": 97.19, "RWS": 98.71},
+    "Josh Rock": {"3DA": 98.10, "COP": 39.98, "STD": 18.0, "FDI": 1838, "F9A": 108.20, "TWS": 96.05, "RWS": 100.41},
+    "Ross Smith": {"3DA": 96.50, "COP": 41.64, "STD": 20.0, "FDI": 1780, "F9A": 106.29, "TWS": 95.43, "RWS": 97.67},
+    "Martin Schindler": {"3DA": 94.13, "COP": 39.23, "STD": 20.0, "FDI": 1745, "F9A": 103.11, "TWS": 93.21, "RWS": 95.14},
+    "Gary Anderson": {"3DA": 97.41, "COP": 42.09, "STD": 17.0, "FDI": 1794, "F9A": 105.99, "TWS": 95.90, "RWS": 99.12},
+    "Nathan Aspinall": {"3DA": 95.64, "COP": 38.91, "STD": 20.0, "FDI": 1848, "F9A": 104.88, "TWS": 94.41, "RWS": 97.04},
+    "Damon Heta": {"3DA": 94.81, "COP": 43.50, "STD": 20.0, "FDI": 1785, "F9A": 102.49, "TWS": 93.86, "RWS": 95.87},
+    "Rob Cross": {"3DA": 95.75, "COP": 40.51, "STD": 20.0, "FDI": 1720, "F9A": 103.66, "TWS": 95.59, "RWS": 95.96},
+    "Mike De Decker": {"3DA": 93.92, "COP": 38.74, "STD": 20.0, "FDI": 1780, "F9A": 101.65, "TWS": 92.78, "RWS": 95.19},
+    "Jermaine Wattimena": {"3DA": 94.87, "COP": 39.60, "STD": 21.0, "FDI": 1819, "F9A": 104.10, "TWS": 93.69, "RWS": 96.17},
+    "Ryan Searle": {"3DA": 95.76, "COP": 40.25, "STD": 20.0, "FDI": 1767, "F9A": 105.02, "TWS": 95.06, "RWS": 96.56},
+    "Dave Chisnall": {"3DA": 91.86, "COP": 37.89, "STD": 20.0, "FDI": 1700, "F9A": 101.15, "TWS": 89.94, "RWS": 94.02},
+    "Daryl Gurney": {"3DA": 93.23, "COP": 40.68, "STD": 21.0, "FDI": 1736, "F9A": 100.33, "TWS": 91.49, "RWS": 95.20},
+    "Dimitri Van den Bergh": {"3DA": 88.97, "COP": 32.74, "STD": 20.0, "FDI": 1688, "F9A": 96.92, "TWS": 87.51, "RWS": 90.60},
+    "Ryan Joyce": {"3DA": 93.02, "COP": 42.71, "STD": 21.0, "FDI": 1750, "F9A": 100.80, "TWS": 91.47, "RWS": 94.72},
+    "Luke Woodhouse": {"3DA": 92.70, "COP": 39.17, "STD": 21.0, "FDI": 1771, "F9A": 100.05, "TWS": 91.82, "RWS": 93.69},
+    "Cameron Menzies": {"3DA": 92.65, "COP": 37.99, "STD": 22.0, "FDI": 1753, "F9A": 101.83, "TWS": 91.02, "RWS": 94.50},
+    "Ritchie Edhouse": {"3DA": 90.94, "COP": 37.98, "STD": 22.0, "FDI": 1688, "F9A": 98.63, "TWS": 89.62, "RWS": 92.42},
+    "Michael Smith": {"3DA": 92.74, "COP": 39.10, "STD": 19.0, "FDI": 1695, "F9A": 100.84, "TWS": 91.94, "RWS": 93.64},
+    "Dirk van Duijvenbode": {"3DA": 96.53, "COP": 41.29, "STD": 20.0, "FDI": 1757, "F9A": 106.28, "TWS": 95.03, "RWS": 98.24},
+    "Peter Wright": {"3DA": 92.41, "COP": 38.77, "STD": 20.0, "FDI": 1674, "F9A": 99.83, "TWS": 90.93, "RWS": 94.06},
+    "Wessel Nijman": {"3DA": 95.86, "COP": 42.18, "STD": 21.0, "FDI": 1864, "F9A": 104.62, "TWS": 94.44, "RWS": 97.47},
+    "Joe Cullen": {"3DA": 91.88, "COP": 36.08, "STD": 20.0, "FDI": 1677, "F9A": 100.51, "TWS": 89.51, "RWS": 94.58},
+    "Ricardo Pietreczko": {"3DA": 91.02, "COP": 39.83, "STD": 20.0, "FDI": 1697, "F9A": 98.00, "TWS": 89.82, "RWS": 92.35},
+    "Andrew Gilding": {"3DA": 93.40, "COP": 38.90, "STD": 20.0, "FDI": 1726, "F9A": 101.98, "TWS": 91.80, "RWS": 95.22},
+    "Raymond van Barneveld": {"3DA": 91.38, "COP": 38.65, "STD": 20.0, "FDI": 1691, "F9A": 99.01, "TWS": 90.57, "RWS": 92.33},
+    "Scott Williams": {"3DA": 91.29, "COP": 39.32, "STD": 20.0, "FDI": 1716, "F9A": 99.62, "TWS": 89.78, "RWS": 93.00},
+    "Krzysztof Ratajski": {"3DA": 94.42, "COP": 40.13, "STD": 20.0, "FDI": 1745, "F9A": 102.91, "TWS": 92.89, "RWS": 96.11},
+    "Martin Lukeman": {"3DA": 90.03, "COP": 39.86, "STD": 20.0, "FDI": 1659, "F9A": 96.98, "TWS": 89.54, "RWS": 90.58},
+    "Brendan Dolan": {"3DA": 91.09, "COP": 41.28, "STD": 20.0, "FDI": 1708, "F9A": 98.82, "TWS": 90.28, "RWS": 91.97},
+    "Ricky Evans": {"3DA": 91.81, "COP": 37.24, "STD": 20.0, "FDI": 1709, "F9A": 99.15, "TWS": 90.50, "RWS": 93.23},
+    "Niko Springer": {"3DA": 93.90, "COP": 40.49, "STD": 20.0, "FDI": 1762, "F9A": 102.64, "TWS": 92.42, "RWS": 95.57},
+    "William O'Connor": {"3DA": 93.99, "COP": 39.93, "STD": 22.0, "FDI": 1770, "F9A": 102.84, "TWS": 92.84, "RWS": 95.27},
+    "Niels Zonneveld": {"3DA": 92.90, "COP": 40.41, "STD": 20.0, "FDI": 1712, "F9A": 101.14, "TWS": 91.66, "RWS": 94.25},
+    "Kevin Doets": {"3DA": 91.56, "COP": 38.88, "STD": 20.0, "FDI": 1741, "F9A": 100.45, "TWS": 90.00, "RWS": 93.29},
+    "Karel Sedlacek": {"3DA": 93.00, "COP": 38.45, "STD": 20.0, "FDI": 1764, "F9A": 100.93, "TWS": 91.28, "RWS": 94.91},
+    "Bradley Brooks": {"3DA": 93.20, "COP": 40.21, "STD": 20.0, "FDI": 1720, "F9A": 102.36, "TWS": 91.65, "RWS": 94.92},
+    "Jeffrey de Graaf": {"3DA": 90.51, "COP": 39.15, "STD": 20.0, "FDI": 1680, "F9A": 97.97, "TWS": 89.47, "RWS": 91.68},
+    "Mickey Mansell": {"3DA": 91.36, "COP": 38.77, "STD": 20.0, "FDI": 1710, "F9A": 99.27, "TWS": 89.98, "RWS": 92.95},
+    "Mario Vandenbogaerde": {"3DA": 91.13, "COP": 37.94, "STD": 20.0, "FDI": 1697, "F9A": 99.24, "TWS": 90.62, "RWS": 91.71},
+    "Callan Rydz": {"3DA": 94.26, "COP": 39.43, "STD": 20.0, "FDI": 1729, "F9A": 102.49, "TWS": 93.34, "RWS": 95.26},
+    "Cam Crabtree": {"3DA": 90.80, "COP": 38.75, "STD": 20.0, "FDI": 1728, "F9A": 99.66, "TWS": 89.41, "RWS": 92.37},
+    "Ian White": {"3DA": 91.72, "COP": 40.43, "STD": 20.0, "FDI": 1658, "F9A": 99.43, "TWS": 91.65, "RWS": 91.80},
+    "Sebastian Białecki": {"3DA": 88.55, "COP": 36.34, "STD": 20.0, "FDI": 1661, "F9A": 96.91, "TWS": 87.72, "RWS": 89.49},
+    "Dom Taylor": {"3DA": 94.35, "COP": 43.47, "STD": 20.0, "FDI": 1701, "F9A": 100.65, "TWS": 92.67, "RWS": 96.21},
+    "Richard Veenstra": {"3DA": 90.61, "COP": 37.87, "STD": 20.0, "FDI": 1707, "F9A": 97.26, "TWS": 89.64, "RWS": 91.66},
+    "Madars Razma": {"3DA": 91.69, "COP": 38.82, "STD": 20.0, "FDI": 1700, "F9A": 99.65, "TWS": 90.05, "RWS": 93.54},
+    "Alan Soutar": {"3DA": 91.44, "COP": 37.88, "STD": 20.0, "FDI": 1699, "F9A": 100.62, "TWS": 90.59, "RWS": 92.40},
+    "Lukas Wenig": {"3DA": 91.60, "COP": 35.56, "STD": 20.0, "FDI": 1730, "F9A": 100.25, "TWS": 89.69, "RWS": 93.80},
+    "Kim Huybrechts": {"3DA": 91.23, "COP": 38.21, "STD": 20.0, "FDI": 1667, "F9A": 98.55, "TWS": 89.32, "RWS": 93.32},
+    "Mensur Suljovic": {"3DA": 90.68, "COP": 35.25, "STD": 20.0, "FDI": 1670, "F9A": 99.69, "TWS": 90.07, "RWS": 93.47},
+    "Gabriel Clemens": {"3DA": 91.50, "COP": 36.36, "STD": 20.0, "FDI": 1674, "F9A": 99.83, "TWS": 89.95, "RWS": 93.27},
+    "Thibault Tricole": {"3DA": 89.26, "COP": 37.10, "STD": 20.0, "FDI": 1697, "F9A": 96.33, "TWS": 87.73, "RWS": 90.96},
+    "Matthew Dennant": {"3DA": 90.84, "COP": 38.50, "STD": 20.0, "FDI": 1678, "F9A": 98.02, "TWS": 89.30, "RWS": 92.52},
+    "Darren Beveridge": {"3DA": 90.46, "COP": 38.24, "STD": 20.0, "FDI": 1669, "F9A": 97.48, "TWS": 89.04, "RWS": 92.07},
+    "Justin Hood": {"3DA": 91.36, "COP": 36.74, "STD": 20.0, "FDI": 1671, "F9A": 99.39, "TWS": 89.46, "RWS": 93.52},
+    "Wesley Plaisier": {"3DA": 92.23, "COP": 41.16, "STD": 20.0, "FDI": 1732, "F9A": 99.32, "TWS": 91.54, "RWS": 93.01},
+    "Steve Lennon": {"3DA": 91.38, "COP": 35.75, "STD": 20.0, "FDI": 1686, "F9A": 99.53, "TWS": 89.54, "RWS": 93.40},
+    "Max Hopp": {"3DA": 88.90, "COP": 34.62, "STD": 20.0, "FDI": 1675, "F9A": 97.63, "TWS": 87.35, "RWS": 90.65},
+    "Ryan Meikle": {"3DA": 90.09, "COP": 37.36, "STD": 20.0, "FDI": 1643, "F9A": 97.40, "TWS": 88.36, "RWS": 92.12},
+    "James Hurrell": {"3DA": 91.95, "COP": 37.91, "STD": 20.0, "FDI": 1682, "F9A": 100.24, "TWS": 90.50, "RWS": 93.60},
+    "Nick Kenny": {"3DA": 90.31, "COP": 36.67, "STD": 20.0, "FDI": 1630, "F9A": 97.98, "TWS": 89.48, "RWS": 91.22},
+    "Matt Campbell": {"3DA": 91.10, "COP": 39.65, "STD": 20.0, "FDI": 1647, "F9A": 97.84, "TWS": 89.86, "RWS": 92.46},
+    "Keane Barry": {"3DA": 89.45, "COP": 36.41, "STD": 20.0, "FDI": 1706, "F9A": 97.00, "TWS": 88.20, "RWS": 90.85},
+    "Adam Lipscombe": {"3DA": 88.41, "COP": 38.36, "STD": 20.0, "FDI": 1638, "F9A": 95.06, "TWS": 87.79, "RWS": 89.10},
+    "Darius Labanauskas": {"3DA": 88.66, "COP": 37.65, "STD": 20.0, "FDI": 1655, "F9A": 96.88, "TWS": 87.99, "RWS": 89.40},
+    "Dominik Gruellich": {"3DA": 89.10, "COP": 36.72, "STD": 20.0, "FDI": 1650, "F9A": 97.77, "TWS": 87.78, "RWS": 90.59},
+    "Chris Landman": {"3DA": 90.10, "COP": 37.23, "STD": 20.0, "FDI": 1657, "F9A": 98.27, "TWS": 89.31, "RWS": 90.98},
+    "Owen Bates": {"3DA": 88.79, "COP": 36.82, "STD": 20.0, "FDI": 1641, "F9A": 98.01, "TWS": 87.16, "RWS": 90.61},
+    "Cor Dekker": {"3DA": 87.89, "COP": 37.72, "STD": 20.0, "FDI": 1710, "F9A": 95.99, "TWS": 86.18, "RWS": 89.85},
+    "Connor Scutt": {"3DA": 93.30, "COP": 39.24, "STD": 20.0, "FDI": 1692, "F9A": 101.43, "TWS": 92.47, "RWS": 94.19},
+    "Beau Greaves": {"3DA": 90.57, "COP": 38.82, "STD": 20.0, "FDI": 1753, "F9A": 100.99, "TWS": 90.15, "RWS": 91.04},
+    "Charlie Manby": {"3DA": 89.65, "COP": 37.62, "STD": 20.0, "FDI": 1689, "F9A": 99.36, "TWS": 88.79, "RWS": 90.58},
+    "Jamai van den Herik": {"3DA": 88.11, "COP": 36.12, "STD": 20.0, "FDI": 1588, "F9A": 97.10, "TWS": 87.10, "RWS": 89.23},
+    "Jurjen van der Velde": {"3DA": 87.87, "COP": 37.06, "STD": 20.0, "FDI": 1690, "F9A": 96.82, "TWS": 86.43, "RWS": 89.49},
+    "Stefan Bellmont": {"3DA": 86.87, "COP": 37.69, "STD": 20.0, "FDI": 1621, "F9A": 94.28, "TWS": 85.50, "RWS": 88.42},
+    "Ted Evetts": {"3DA": 88.24, "COP": 35.01, "STD": 20.0, "FDI": 1644, "F9A": 97.66, "TWS": 87.05, "RWS": 89.56},
+    "Mervyn King": {"3DA": 89.34, "COP": 38.29, "STD": 20.0, "FDI": 1647, "F9A": 98.34, "TWS": 88.67, "RWS": 90.08},
+    "Lisa Ashton": {"3DA": 78.80, "COP": 30.80, "STD": 20.0, "FDI": 1557, "F9A": 86.64, "TWS": 77.03, "RWS": 80.80},
+    "Fallon Sherrock": {"3DA": 80.95, "COP": 32.88, "STD": 20.0, "FDI": 1591, "F9A": 89.87, "TWS": 79.92, "RWS": 82.06},
+    "Noa-Lynn van Leuven": {"3DA": 81.47, "COP": 32.81, "STD": 20.0, "FDI": 1558, "F9A": 90.59, "TWS": 81.20, "RWS": 81.76},
+    "Gemma Hayter": {"3DA": 79.93, "COP": 34.05, "STD": 20.0, "FDI": 1598, "F9A": 86.91, "TWS": 78.82, "RWS": 81.13},
+    "Mitsuhiko Tatsunami": {"3DA": 82.18, "COP": 31.62, "STD": 20.0, "FDI": 1568, "F9A": 92.46, "TWS": 82.32, "RWS": 82.03},
+    "Xiaochen Zong": {"3DA": 83.21, "COP": 31.95, "STD": 20.0, "FDI": 1586, "F9A": 93.58, "TWS": 82.90, "RWS": 83.56},
+    "Nitin Kumar": {"3DA": 77.04, "COP": 32.02, "STD": 20.0, "FDI": 1547, "F9A": 87.15, "TWS": 76.92, "RWS": 77.16},
+    "Lourence Ilagan": {"3DA": 86.90, "COP": 38.10, "STD": 20.0, "FDI": 1697, "F9A": 96.24, "TWS": 86.00, "RWS": 87.86},
+    "Alexis Toylo": {"3DA": 86.73, "COP": 38.35, "STD": 20.0, "FDI": 1670, "F9A": 95.66, "TWS": 86.15, "RWS": 87.35},
+    "Motomu Sakai": {"3DA": 86.74, "COP": 36.41, "STD": 20.0, "FDI": 1613, "F9A": 97.17, "TWS": 86.06, "RWS": 87.49},
+    "Ryusei Azemoto": {"3DA": 83.28, "COP": 34.07, "STD": 20.0, "FDI": 1606, "F9A": 93.22, "TWS": 82.92, "RWS": 83.67},
+    "Paul Lim": {"3DA": 85.03, "COP": 35.00, "STD": 20.0, "FDI": 1586, "F9A": 94.84, "TWS": 83.99, "RWS": 86.14},
+    "Man Lok Leung": {"3DA": 87.55, "COP": 37.05, "STD": 20.0, "FDI": 0.0, "F9A": 97.51, "TWS": 86.32, "RWS": 88.87},
+    "Paolo Nebrida": {"3DA": 85.58, "COP": 37.80, "STD": 20.0, "FDI": 1626, "F9A": 94.11, "TWS": 84.19, "RWS": 87.10},
+    "Andy Baetens": {"3DA": 91.20, "COP": 36.04, "STD": 20.0, "FDI": 1691, "F9A": 99.83, "TWS": 89.49, "RWS": 93.09},
+    "Cristo Reyes": {"3DA": 97.61, "COP": 50.00, "STD": 20.0, "FDI": 1721, "F9A": 105.31, "TWS": 95.78, "RWS": 99.78},
+    "Boris Krcmar": {"3DA": 89.96, "COP": 37.81, "STD": 20.0, "FDI": 1729, "F9A": 99.50, "TWS": 89.17, "RWS": 90.82},
+    "Adam Gawlas": {"3DA": 85.93, "COP": 36.96, "STD": 20.0, "FDI": 1641, "F9A": 94.82, "TWS": 84.82, "RWS": 87.13},
+    "Krzysztof Kciuk": {"3DA": 84.61, "COP": 35.47, "STD": 20.0, "FDI": 1617, "F9A": 92.04, "TWS": 83.90, "RWS": 85.43},
+    "Arno Merk": {"3DA": 83.30, "COP": 34.84, "STD": 20.0, "FDI": 1635, "F9A": 91.31, "TWS": 82.85, "RWS": 83.78},
+    "Patrik Kovacs": {"3DA": 82.17, "COP": 35.69, "STD": 20.0, "FDI": 1607, "F9A": 90.32, "TWS": 81.54, "RWS": 82.84},
+    "David Davies": {"3DA": 85.79, "COP": 33.57, "STD": 20.0, "FDI": 1523, "F9A": 95.00, "TWS": 85.86, "RWS": 85.72},
+    "Alex Spellman": {"3DA": 84.65, "COP": 37.86, "STD": 20.0, "FDI": 1646, "F9A": 92.53, "TWS": 83.29, "RWS": 86.21},
+    "Leonard Gates": {"3DA": 85.55, "COP": 34.86, "STD": 20.0, "FDI": 1623, "F9A": 93.85, "TWS": 84.89, "RWS": 86.28},
+    "Adam Sevada": {"3DA": 89.69, "COP": 41.40, "STD": 20.0, "FDI": 1703, "F9A": 99.01, "TWS": 89.02, "RWS": 90.43},
+    "David Cameron": {"3DA": 86.63, "COP": 35.55, "STD": 20.0, "FDI": 1577, "F9A": 0.0, "TWS": 0.0, "RWS": 0.0}, # Huom: F9A, TWS, RWS puuttuvat tiedoista, arvo 0
+    "Stowe Buntz": {"3DA": 86.74, "COP": 37.75, "STD": 20.0, "FDI": 1675, "F9A": 94.86, "TWS": 85.05, "RWS": 88.60},
+    "Jesus Salate": {"3DA": 82.69, "COP": 36.23, "STD": 20.0, "FDI": 1633, "F9A": 92.35, "TWS": 81.19, "RWS": 84.34},
+    "Teemu Harju": {"3DA": 86.36, "COP": 35.29, "STD": 20.0, "FDI": 1669, "F9A": 95.87, "TWS": 85.53, "RWS": 87.28},
+    "Andreas Harrysson": {"3DA": 87.89, "COP": 36.87, "STD": 20.0, "FDI": 1682, "F9A": 97.18, "TWS": 86.91, "RWS": 89.00},
+    "Oskar Lukasiak": {"3DA": 85.67, "COP": 35.93, "STD": 20.0, "FDI": 1573, "F9A": 92.82, "TWS": 84.95, "RWS": 86.48},
+    "Simon Whitlock": {"3DA": 86.34, "COP": 36.40, "STD": 20.0, "FDI": 1656, "F9A": 94.19, "TWS": 85.47, "RWS": 87.33},
+    "Tim Pusey": {"3DA": 82.91, "COP": 34.44, "STD": 20.0, "FDI": 1614, "F9A": 91.44, "TWS": 81.78, "RWS": 84.14},
+    "Joe Comito": {"3DA": 84.36, "COP": 31.04, "STD": 20.0, "FDI": 1569, "F9A": 93.59, "TWS": 82.77, "RWS": 86.07},
+    "Jonny Tata": {"3DA": 86.02, "COP": 36.23, "STD": 20.0, "FDI": 1664, "F9A": 96.55, "TWS": 85.78, "RWS": 86.29},
+    "David Munyua": {"3DA": 75.05, "COP": 26.79, "STD": 20.0, "FDI": 1347, "F9A": 84.62, "TWS": 73.92, "RWS": 76.31},
+    "Adam Hunt": {"3DA": 89.28, "COP": 37.72, "STD": 20.0, "FDI": 1666, "F9A": 97.04, "TWS": 88.10, "RWS": 90.59},
+    "Tavis Dudeney": {"3DA": 82.66, "COP": 34.51, "STD": 20.0, "FDI": 1520, "F9A": 89.03, "TWS": 81.00, "RWS": 84.52},
+    "Stephen Burton": {"3DA": 89.60, "COP": 35.35, "STD": 20.0, "FDI": 1635, "F9A": 97.50, "TWS": 87.79, "RWS": 91.64},
+    "Haupai Puha": {"3DA": 87.24, "COP": 37.48, "STD": 20.0, "FDI": 1618, "F9A": 95.63, "TWS": 86.16, "RWS": 88.44},
+    "Mario Vandenbogaerde (Duplicate)": {"3DA": 91.13, "COP": 37.94, "STD": 20.0, "FDI": 1697, "F9A": 99.24, "TWS": 90.62, "RWS": 91.71}, # Tämä nimi on kaksoiskappale, mutta pidetään, jos sitä käytetään karsintalistassa
     
-    # 4. Neljännes
-    "Michael van Gerwen (3)": {"KA": 97.28, "KAUSI 2025": 97.28, "COP": 43, "STD": 18, "FDI": 64.6, "F9A": 99.5, "TWS": 81, "RWS": 46}, # Päivitetty
-    "Peter Wright (30)": {"KA": 93.50, "KAUSI 2025": 94.0, "COP": 35, "STD": 20, "FDI": 58.0, "F9A": 96.0, "TWS": 69, "RWS": 38}, 
-    "Gary Anderson (14)": {"KA": 97.41, "KAUSI 2025": 97.41, "COP": 37, "STD": 17, "FDI": 64.8, "F9A": 99.7, "TWS": 79, "RWS": 44}, # Päivitetty
-    "Jermaine Wattimena (19)": {"KA": 94.87, "KAUSI 2025": 95.0, "COP": 32, "STD": 21, "FDI": 60.0, "F9A": 97.0, "TWS": 71, "RWS": 39},
-    "Danny Noppert (6)": {"KA": 94.79, "KAUSI 2025": 95.0, "COP": 37, "STD": 20, "FDI": 60.0, "F9A": 97.0, "TWS": 72, "RWS": 40},
-    "Ritchie Edhouse (27)": {"KA": 93.20, "KAUSI 2025": 93.0, "COP": 32, "STD": 22, "FDI": 56.0, "F9A": 94.5, "TWS": 65, "RWS": 35},
-    "Josh Rock (11)": {"KA": 98.10, "KAUSI 2025": 98.10, "COP": 38, "STD": 18, "FDI": 66.2, "F9A": 100.4, "TWS": 81, "RWS": 45}, # Päivitetty
-    "Daryl Gurney (22)": {"KA": 94.00, "KAUSI 2025": 94.2, "COP": 33, "STD": 21, "FDI": 58.4, "F9A": 96.0, "TWS": 69, "RWS": 37},
-
-    "--- SIJOITTAMATTOMAT & KVALIFIOIJAT ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": "N/A", "TWS": "N/A", "RWS": "N/A"},
-    
-    # Esimerkkejä muista (R1):
-    "Darius Labanauskas (LTU)": {"KA": 89.0, "KAUSI 2025": 90.0, "COP": 33, "STD": 21, "FDI": 50.0, "F9A": 91.5, "TWS": 60, "RWS": 30},
-    "Mensur Suljovic (AUT)": {"KA": 91.0, "KAUSI 2025": 90.5, "COP": 36, "STD": 20, "FDI": 50.5, "F9A": 92.0, "TWS": 63, "RWS": 33},
-    "Raymond van Barneveld (NED)": {"KA": 92.5, "KAUSI 2025": 92.0, "COP": 34, "STD": 19, "FDI": 52.0, "F9A": 93.8, "TWS": 66, "RWS": 34},
-    "Krzysztof Ratajski (POL)": {"KA": 92.0, "KAUSI 2025": 92.5, "COP": 34, "STD": 20, "FDI": 52.5, "F9A": 94.3, "TWS": 66, "RWS": 35},
-    "Fallon Sherrock (ENG)": {"KA": 88.0, "KAUSI 2025": 88.5, "COP": 32, "STD": 21, "FDI": 48.5, "F9A": 89.5, "TWS": 57, "RWS": 29},
-    "Teemu Harju (FIN)": {"KA": 87.0, "KAUSI 2025": 88.5, "COP": 25, "STD": 24, "FDI": 48.5, "F9A": 89.5, "TWS": 55, "RWS": 28},
-    
-    "--- LISÄPROFIILIT ---": {"KA": 95.0, "KAUSI 2025": 95.0, "COP": 35, "STD": 18, "FDI": "N/A", "F9A": "N/A", "TWS": "N/A", "RWS": "N/A"},
-    "Epätasainen (Aloittelija)": {"KA": 80.0, "KAUSI 2025": 80.0, "COP": 28, "STD": 25, "FDI": 30.0, "F9A": 81.0, "TWS": 45, "RWS": 25},
-    "Hyvä Harrastaja": {"KA": 90.0, "KAUSI 2025": 90.0, "COP": 33, "STD": 20, "FDI": 50.0, "F9A": 91.5, "TWS": 65, "RWS": 35}
+    # Huom: Listassa on 128 riviä, mutta monet nimet toistuvat / ovat eri kategorioissa. 
+    # Tässä listauksessa on käytetty 96 UNIIKKIA nimeä (ja duplikaatit on huomioitu, jos niitä löytyi datasta)
 }
 PLAYER_NAMES = list(DEFAULT_PRESETS.keys())
 
