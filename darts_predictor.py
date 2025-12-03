@@ -98,7 +98,7 @@ def main():
     st.title("🎯 Darts-ottelun Tulosennustin")
     
     # Lataa data heti alussa
-    data_file_path = "MM 25 csv - Voitko tehdä kaikista osallistujista docs listan... (1).csv"
+    data_file_path = "MM 25.csv"
     if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
         load_data(data_file_path)
 
