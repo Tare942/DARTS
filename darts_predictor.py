@@ -1,15 +1,15 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-# from scipy.stats import poisson <--- POISTETTU TÄSTÄ
 
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
+# (Ei muutoksia verrattuna edelliseen versioon)
 
 @st.cache_resource
 def load_data(file_path):
     """Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt."""
     try:
-        # Tässä käytetään tiedostonimeä, joka on ollut käytössä aiemmin (huomioi pitkä nimi)
+        # Huom: Käytetään tiedostonimeä, joka on ollut käytössä aiemmin
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
@@ -72,60 +72,73 @@ def set_player_stats(player_key):
         st.session_state[session_key] = get_float_val(player_data, stat_key, default_val)
 
 
-# --- 2. ENNUSTUSMALLI (MONTE CARLO) ILMAN SCIPY:Ä ---
+# --- 2. PARANNETTU ENNUSTUSMALLI (MONTE CARLO) ---
 
-def calculate_leg_win_probability(stat_A, stat_B):
+def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     """
-    Laskee legin voittotodennäköisyyden (LWP) suhteellisen vahvuuden perusteella.
+    Laskee Legivoiton Todennäköisyyden (LWP) suhteellisen vahvuuden perusteella 
+    käyttäen annettuja painotuksia.
     
-    Käytetään Logit-pohjaista/Elo-tyylistä lähestymistapaa, joka on karkeasti 
-    vastine Poisson-mallille ilman scipyä. 
+    Args:
+        attacker_stats (dict): Sen pelaajan tilastot, jonka voittoa lasketaan.
+        defender_stats (dict): Vastustajan tilastot.
+        type (str): 'TWS' jos hyökkääjä aloittaa (TWS KA vs RWS KA) 
+                    tai 'RWS' jos hyökkääjä vastaanottaa (RWS KA vs TWS KA).
+    
+    Returns:
+        float: Todennäköisyys, että hyökkääjä voittaa legin.
     """
     
-    # 1. Määritellään pelaajan kokonaisvahvuus (Strength Score)
-    # Painotukset (voit hienosäätää näitä arvoja)
-    WEIGHT_3DA = 0.5
-    WEIGHT_COP = 0.5 
+    # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
+    # TWS KA ja RWS KA ovat tärkeimmät, koska ne kuvaavat legin tulosta suoraan.
+    # Muut arvon hienosäätävät tätä suhdetta.
+    WEIGHT_SCORING = 1.0  # TWS KA / RWS KA on perusta
+    WEIGHT_COP = 0.05     # Checkout-prosentti: Pieni vaikutus kokonaisvahvuuteen
+    WEIGHT_3DA = 0.001    # Yleinen Average: Tasoittava tekijä
     
-    # Huomioidaan vain pelaajan omat hyökkäysarvot tässä kohtaa suhteellisen vahvuuden laskemiseen.
-    # TWS KA on tärkein mittari legin voitossa.
-    
-    strength_A = (stat_A['TWS KA'] * 1.0) + (stat_A['COP (%)'] * WEIGHT_COP) + (stat_A['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
-    strength_B = (stat_B['TWS KA'] * 1.0) + (stat_B['COP (%)'] * WEIGHT_COP) + (stat_B['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
+    # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima
+    if type == 'TWS':
+        # Hyökkääjä aloittaa: Käyttää TWS KA:ta, Vastustaja RWS KA:ta
+        attacker_score = attacker_stats['TWS KA'] * WEIGHT_SCORING
+        defender_score = defender_stats['RWS KA'] * WEIGHT_SCORING
+    else: # type == 'RWS'
+        # Hyökkääjä vastaanottaa: Käyttää RWS KA:ta, Vastustaja TWS KA:ta
+        attacker_score = attacker_stats['RWS KA'] * WEIGHT_SCORING
+        defender_score = defender_stats['TWS KA'] * WEIGHT_SCORING
 
-    # 2. Muutetaan vahvuusarvot todennäköisyydeksi (Logit/Sigmoid-funktio)
-    # Käytetään yksinkertaista suhteellista jakoa, joka toimii samalla periaatteella kuin Elo-ero.
+    # 2. Lisätään hienosäätö COP ja 3DA perusteella
+    # Korkeampi COP ja 3DA tekevät hyökkääjän vahvuudesta kokonaisvaltaisesti paremman
+    # *HUOM*: COP (%) ja 3DA (90-110) on skaalattava, jotta ne eivät dominoi tulosta.
     
-    total_strength = strength_A + strength_B
-    if total_strength == 0:
+    attacker_boost = (attacker_stats['COP (%)'] * WEIGHT_COP) + (attacker_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
+    defender_boost = (defender_stats['COP (%)'] * WEIGHT_COP) + (defender_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
+    
+    # Kokonaisvahvuus
+    total_attacker_strength = attacker_score + attacker_boost
+    total_defender_strength = defender_score + defender_boost
+    
+    # Estä nollalla jakaminen
+    total_strength = total_attacker_strength + total_defender_strength
+    if total_strength <= 0:
         return 0.5
         
-    prob_A = strength_A / total_strength
+    # 3. Laske Legivoiton Todennäköisyys (LWP)
+    prob_win = total_attacker_strength / total_strength
     
-    return prob_A # Tämä on Leg Win Probability (LWP)
+    return prob_win
 
 
 def simulate_game(a_stats, b_stats, match_format, start_player, iterations=2500):
     """
-    Simuloi koko ottelu Monte Carlo -tekniikalla
+    Simuloi koko ottelu Monte Carlo -tekniikalla, käyttäen uutta LWP-mallia.
     """
     
-    # 1. Laske legivoiton todennäköisyys (LWP) aloittajasta riippuen
-    # TWP_A (A voittaa kun A aloittaa)
-    twp_a = calculate_leg_win_probability(a_stats, b_stats) 
+    # 1. Laske legivoiton todennäköisyydet kerran:
+    # TWP_A: A:n todennäköisyys voittaa, kun A aloittaa
+    twp_a = calculate_leg_win_probability(a_stats, b_stats, type='TWS') 
     
-    # RWP_A (A voittaa kun B aloittaa)
-    # Käytetään tässä B:n RWS KA:ta A:n TWS KA:n sijaan, kun B aloittaa
-    twp_b = calculate_leg_win_probability(b_stats, a_stats) # B:n legivoitto kun B aloittaa
-    rwp_a = 1.0 - twp_b # A:n legivoitto kun B aloittaa
-    
-    # HUOMIO: Käytetään nyt todellisia TWS/RWS KA arvoja, jos ne ovat erillisiä!
-    # Tämä tekee mallista entistä tarkemman.
-    
-    # Legivoitto, kun A aloittaa (LWP_A_TWS)
-    twp_a = a_stats['TWS KA'] / (a_stats['TWS KA'] + b_stats['RWS KA'])
-    # Legivoitto, kun B aloittaa (LWP_A_RWS)
-    rwp_a = a_stats['RWS KA'] / (a_stats['RWS KA'] + b_stats['TWS KA'])
+    # RWP_A: A:n todennäköisyys voittaa, kun B aloittaa (A vastaanottaa)
+    rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
     
     a_match_wins = 0
     
@@ -146,11 +159,9 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=2500)
                                 (current_start_player == -1 and leg_count % 2 != 0)
                 
                 if leg_starter_a:
-                    # A aloittaa: A käyttää TWS KA, B käyttää RWS KA
-                    prob_a_win = twp_a
+                    prob_a_win = twp_a  # A aloittaa
                 else:
-                    # B aloittaa: B käyttää TWS KA, A käyttää RWS KA
-                    prob_a_win = rwp_a
+                    prob_a_win = rwp_a  # B aloittaa (A vastaanottaa)
                 
                 if np.random.rand() < prob_a_win:
                     a_legs += 1
@@ -202,7 +213,6 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=2500)
                     b_sets += 1
                     
                 # PDC:n formaatissa setin aloittaja vaihtuu
-                # Vaihda aloitusvuoro jokaisen setin jälkeen
                 current_start_player *= -1
                 set_count += 1
 
@@ -213,10 +223,11 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=2500)
 
 
 # --- 3. STREAMLIT PÄÄFUNKTIO ---
+# (Ei merkittäviä muutoksia, käyttöliittymä on sama)
 
 def main():
     st.set_page_config(page_title="Darts Ennustaja", layout="wide")
-    st.title("🎯 Darts-ottelun Ennustaja (Monte Carlo Simulaatio)")
+    st.title("🎯 Darts-ottelun Ennustaja (Parannettu Simulaatio)")
     st.markdown("### Ottelumuoto ja Simulaation Asetukset")
     
     data_file_path = "MM 25.csv"
