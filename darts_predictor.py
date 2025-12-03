@@ -1,34 +1,25 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import io
 
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
 
 @st.cache_resource
 def load_data(file_path):
-    """
-    Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt.
-    """
+    """Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt."""
     try:
-        # Ladataan data
         df = pd.read_csv(file_path, sep=',') 
         
-        # Puhdistetaan Pelaajan Nimi -sarake ylimääräisistä numeroista ja pisteistä (esim. "1. Luke Littler (England)" -> "Luke Littler (England)")
         if 'Pelaajan Nimi' in df.columns:
             df['Pelaajan Nimi'] = df['Pelaajan Nimi'].astype(str).str.replace(r'^\d+\.\s*', '', regex=True)
 
-        # Määriteltävät sarakkeet, joissa on pilkku desimaalierottimena ja pitäisi olla floatteja
         float_cols = ['KAUSI 2025 (3DA)', 'COP (%)', 'STD (Hajonta)', 'TWS KA', 'RWS KA']
         
         for col in float_cols:
             if col in df.columns:
-                # Muutetaan string-sarakkeet floateiksi: ensin poistetaan lainausmerkit, sitten vaihdetaan pilkku pisteeksi
                 df[col] = df[col].astype(str).str.replace('"', '').str.replace(',', '.', regex=False)
-                # Lopuksi yritetään muuttaa floatiksi. Jos epäonnistuu (esim. tyhjä arvo), tulee NaN
                 df[col] = pd.to_numeric(df[col], errors='coerce')
         
-        # Poistetaan NaN-arvot Pelaajan Nimi -sarakkeesta
         df = df.dropna(subset=['Pelaajan Nimi']).reset_index(drop=True)
         
         st.session_state['player_data'] = df
@@ -36,7 +27,6 @@ def load_data(file_path):
         return df
         
     except Exception as e:
-        # Pysyvä virheilmoitus, jos tiedostoa ei löydy tai lataus epäonnistuu
         st.error(f"Virhe datan latauksessa (Tarkista tiedostonimi ja muoto): {e}")
         return pd.DataFrame()
 
@@ -45,10 +35,8 @@ def load_player_data(player_name):
     """Hakee pelaajan tilastot DataFrame-objektista."""
     df = st.session_state.get('player_data', pd.DataFrame())
     if player_name and not df.empty:
-        # Haetaan rivi, joka vastaa pelaajan nimeä
         row = df[df['Pelaajan Nimi'] == player_name]
         if not row.empty:
-            # Palautetaan rivi sanakirjana (ilman indeksiä)
             return row.iloc[0].to_dict()
     return {} 
 
@@ -61,17 +49,38 @@ def get_float_val(data, key, default_value):
             
     return float(default_value)
 
+# 🟢 UUSI: TAKAISINKUTSUFUNKTIO ARVOJEN PÄIVITYKSEEN 🟢
+def set_player_stats(player_key):
+    """
+    Lataa valitun pelaajan tiedot ja asettaa ne suoraan Streamlitin sessiotilaan.
+    Tämä päivittää number_input-kenttien arvot automaattisesti.
+    """
+    player_name = st.session_state[player_key]
+    player_data = load_player_data(player_name)
+    
+    # Määritä syötekenttien avaimet ja oletusarvot (HUOM: number_input-kenttien uudet avaimet)
+    stats_map = {
+        'KAUSI 2025 (3DA)': (90.0, '3da'),
+        'COP (%)': (35.0, 'COP_%'),
+        'STD (Hajonta)': (20.0, 'STD_Hajonta'),
+        'TWS KA': (90.0, 'TWS_KA'),
+        'RWS KA': (90.0, 'RWS_KA'),
+    }
+
+    prefix = player_key.split('_')[0] # 'a' tai 'b'
+    
+    for stat_key, (default_val, suffix) in stats_map.items():
+        # UUSI AVAIN MUOTO: 'a_3da', 'b_COP_%' jne.
+        session_key = f"{prefix}_{suffix}"
+        
+        # Asetetaan arvo suoraan st.session_stateen
+        st.session_state[session_key] = get_float_val(player_data, stat_key, default_val)
+
 
 # --- 2. ENNUSTUSLASKENTA (PLACEHOLDER) ---
 
 def calculate_win_probability(a_stats, b_stats):
-    """
-    Laske ottelun todennäköisyys annettujen tilastojen perusteella.
-    TÄMÄ ON EHDOTTOMASTI KORVATTAVA OMALLA MALLI- TAI LASKENTALOGIIKALLASI!
-    """
-    # Esimerkki: Painotetaan kauden keskiarvoa (3DA) ja tarkistusprosenttia (COP)
-    
-    # Käytetään 3DA:ta ja COP:ta 
+    """Laske ottelun todennäköisyys annettujen tilastojen perusteella."""
     a_score = a_stats['KAUSI 2025 (3DA)'] + (a_stats['COP (%)'] * 10) 
     b_score = b_stats['KAUSI 2025 (3DA)'] + (b_stats['COP (%)'] * 10) 
 
@@ -82,14 +91,14 @@ def calculate_win_probability(a_stats, b_stats):
     return prob_a
 
 
-# --- 3. STREAMLIT PÄÄFUNKTIO (PÄIVITETYT SYÖTEKENTÄT) ---
+# --- 3. STREAMLIT PÄÄFUNKTIO ---
 
 def main():
     st.set_page_config(page_title="Darts Ennustaja", layout="wide")
     st.title("🎯 Darts-ottelun Tulosennustin")
     
-    # KÄYTÄ AINA OIKEAA TIEDOSTONIMEÄ!
-    data_file_path = "MM 25.csv"
+    data_file_path = "Voitko tehdä kaikista osallistujista docs listan... - Voitko tehdä kaikista osallistujista docs listan....csv"
+    
     if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
         load_data(data_file_path)
 
@@ -98,71 +107,82 @@ def main():
     if len(all_players) == 1 and all_players[0] == "Muokkaa itse":
         st.warning(f"Pelaajadataa ei voitu ladata tiedostosta: {data_file_path}. Tarkista tiedostonimi ja muoto.")
         
+    # Ladataan alustavat arvot kerran, jos niitä ei ole asetettu
+    if 'a_name' not in st.session_state:
+        st.session_state['a_name'] = all_players[0] if all_players else "Muokkaa itse"
+        set_player_stats('a_name')
+    if 'b_name' not in st.session_state:
+        st.session_state['b_name'] = all_players[1] if len(all_players) > 1 else all_players[0]
+        set_player_stats('b_name')
+
+    
     col1, col2 = st.columns(2)
 
     # --- Pelaaja A ---
     with col1:
         st.header("Pelaaja A")
         
-        # Oletusvalinta: Luke Littler
-        default_a_index = all_players.index("Luke Littler (England)") if "Luke Littler (England)" in all_players else 0
+        default_a_index = all_players.index(st.session_state['a_name']) if st.session_state['a_name'] in all_players else 0
         
+        # 🟢 MUUTOS: Lisätty on_change ja args automaattista päivitystä varten
         player_a_name = st.selectbox(
             "Valitse Pelaaja A", 
             all_players, 
             index=default_a_index, 
-            key='a_name'
+            key='a_name', 
+            on_change=set_player_stats,
+            args=('a_name',)
         )
-        
-        player_a_data = load_player_data(player_a_name)
         
         st.subheader("Keskiarvot ja Tehokkuus")
         
-        # KAUSI 2025 (3DA)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         a_3da = st.number_input(
             "Kauden 3-darts Average (3DA)",
             min_value=60.0, max_value=120.0, step=0.01,
-            value=get_float_val(player_a_data, 'KAUSI 2025 (3DA)', 90.0),
-            key='a_3da', format="%.2f"
+            key='a_3da',
+            format="%.2f"
         )
         
-        # COP (%)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         a_cop = st.number_input(
             "COP (Checkout %)",
             min_value=10.0, max_value=80.0, step=0.01,
-            value=get_float_val(player_a_data, 'COP (%)', 35.0),
-            key='a_cop', format="%.2f"
+            key='a_COP_%',
+            format="%.2f"
         )
         
-        # 🟢 KORJAUS: Max value nostettu 40.0:een (oli 30.0) virheen estämiseksi
-        # STD (Hajonta)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         a_std = st.number_input(
             "STD (Pist. heittojen hajonta)",
-            min_value=10.0, max_value=40.0, # <--- MUUTETTU TÄSTÄ
+            min_value=10.0, max_value=40.0, 
             step=0.01,
-            value=get_float_val(player_a_data, 'STD (Hajonta)', 20.0),
-            key='a_std', format="%.2f"
+            key='a_STD_Hajonta',
+            format="%.2f"
         )
         
-        # TWS KA (HEITTÄJÄN ALOITTAMA LEGI)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         a_tws = st.number_input(
             "TWS KA (Avg. Score / Leg Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
-            value=get_float_val(player_a_data, 'TWS KA', 90.0), 
-            key='a_tws', format="%.2f"
+            key='a_TWS_KA', 
+            format="%.2f"
         )
         
-        # RWS KA (VASTAANOTETTU LEGI)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         a_rws = st.number_input(
             "RWS KA (Avg. Score / Leg Opponent Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
-            value=get_float_val(player_a_data, 'RWS KA', 90.0), 
-            key='a_rws', format="%.2f"
+            key='a_RWS_KA', 
+            format="%.2f"
         )
         
         a_stats = {
-            'TWS KA': a_tws, 'RWS KA': a_rws, 'KAUSI 2025 (3DA)': a_3da,
-            'COP (%)': a_cop, 'STD (Hajonta)': a_std
+            'TWS KA': st.session_state['a_TWS_KA'], 
+            'RWS KA': st.session_state['a_RWS_KA'], 
+            'KAUSI 2025 (3DA)': st.session_state['a_3da'],
+            'COP (%)': st.session_state['a_COP_%'], 
+            'STD (Hajonta)': st.session_state['a_STD_Hajonta']
         }
 
 
@@ -170,67 +190,67 @@ def main():
     with col2:
         st.header("Pelaaja B")
         
-        # Oletusvalinta: Luke Humphries
-        default_b_index = all_players.index("Luke Humphries (England)") if "Luke Humphries (England)" in all_players else 0
-        if default_b_index == default_a_index and len(all_players) > 1:
-            default_b_index = (default_b_index + 1) % len(all_players)
+        default_b_index = all_players.index(st.session_state['b_name']) if st.session_state['b_name'] in all_players else 0
         
+        # 🟢 MUUTOS: Lisätty on_change ja args automaattista päivitystä varten
         player_b_name = st.selectbox(
             "Valitse Pelaaja B", 
             all_players, 
             index=default_b_index, 
-            key='b_name'
+            key='b_name', 
+            on_change=set_player_stats,
+            args=('b_name',)
         )
-        
-        player_b_data = load_player_data(player_b_name)
         
         st.subheader("Keskiarvot ja Tehokkuus")
 
-        # KAUSI 2025 (3DA)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         b_3da = st.number_input(
             "Kauden 3-darts Average (3DA)",
             min_value=60.0, max_value=120.0, step=0.01,
-            value=get_float_val(player_b_data, 'KAUSI 2025 (3DA)', 90.0),
-            key='b_3da', format="%.2f"
+            key='b_3da',
+            format="%.2f"
         )
         
-        # COP (%)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         b_cop = st.number_input(
             "COP (Checkout %)",
             min_value=10.0, max_value=80.0, step=0.01,
-            value=get_float_val(player_b_data, 'COP (%)', 35.0),
-            key='b_cop', format="%.2f"
+            key='b_COP_%',
+            format="%.2f"
         )
         
-        # 🟢 KORJAUS: Max value nostettu 40.0:een (oli 30.0) virheen estämiseksi
-        # STD (Hajonta)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         b_std = st.number_input(
             "STD (Pist. heittojen hajonta)",
-            min_value=10.0, max_value=40.0, # <--- MUUTETTU TÄSTÄ
+            min_value=10.0, max_value=40.0, 
             step=0.01,
-            value=get_float_val(player_b_data, 'STD (Hajonta)', 20.0),
-            key='b_std', format="%.2f"
+            key='b_STD_Hajonta',
+            format="%.2f"
         )
         
-        # TWS KA (HEITTÄJÄN ALOITTAMA LEGI)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         b_tws = st.number_input(
             "TWS KA (Avg. Score / Leg Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
-            value=get_float_val(player_b_data, 'TWS KA', 90.0), 
-            key='b_tws', format="%.2f"
+            key='b_TWS_KA', 
+            format="%.2f"
         )
         
-        # RWS KA (VASTAANOTETTU LEGI)
+        # 🔴 MUUTOS: value-argumentti POISTETTU, key-arvo muutettu
         b_rws = st.number_input(
             "RWS KA (Avg. Score / Leg Opponent Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
-            value=get_float_val(player_b_data, 'RWS KA', 90.0), 
-            key='b_rws', format="%.2f"
+            key='b_RWS_KA',
+            format="%.2f"
         )
 
         b_stats = {
-            'TWS KA': b_tws, 'RWS KA': b_rws, 'KAUSI 2025 (3DA)': b_3da,
-            'COP (%)': b_cop, 'STD (Hajonta)': b_std
+            'TWS KA': st.session_state['b_TWS_KA'], 
+            'RWS KA': st.session_state['b_RWS_KA'], 
+            'KAUSI 2025 (3DA)': st.session_state['b_3da'],
+            'COP (%)': st.session_state['b_COP_%'], 
+            'STD (Hajonta)': st.session_state['b_STD_Hajonta']
         }
 
     st.markdown("---")
