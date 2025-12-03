@@ -11,8 +11,6 @@ def load_data(file_path):
     
     try:
         # Yritetään lukea data
-        # HUOM: Erotin (sep=',') on valittu sen perusteella, että data on peräisin Excelistä/Google Docsista, 
-        # jossa pilkku on yleinen erotin.
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
@@ -169,11 +167,13 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             
             while a_sets < sets_to_win and b_sets < sets_to_win:
                 
+                # Simulaatio Yhdestä Setistä (BO5 Leg, 3 legiä voittoon)
                 a_legs = 0
                 b_legs = 0
                 leg_count_in_set = 0
                 
-                while a_legs < 2 and b_legs < 2:
+                # Ehto: Tarvitaan 3 legiä setin voittoon (a_legs < 3 ja b_legs < 3)
+                while a_legs < 3 and b_legs < 3: 
                     
                     leg_starter_a = (current_start_player == 1 and leg_count_in_set % 2 == 0) or \
                                     (current_start_player == -1 and leg_count_in_set % 2 != 0)
@@ -213,7 +213,7 @@ def main():
     # 💾 Datan lataus
     st.markdown("### 💾 Datan lataus")
     
-    # 🚨 PÄIVITETTY OLETUSTIEDOSTOPOLKU 🚨
+    # Oletustiedostopolku on nyt "MM 25.csv"
     default_file_path = "MM 25.csv"
     
     data_file_path = st.text_input(
@@ -224,17 +224,14 @@ def main():
     
     # Latausnappi
     if st.button("Lataa Data Uudelleen"):
-        # Tyhjennä cache ja sessiotila pakottaaksesi uudelleenlatauksen
         if 'player_data' in st.session_state:
             del st.session_state['player_data']
-        # Käynnistetään sovellus uudelleen lataamaan data uudella/samalla polulla
         st.cache_resource.clear()
         st.rerun() 
         
     # Ladataan data, jos se puuttuu
     if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
         df = load_data(data_file_path)
-        # Jos lataus epäonnistui, näytetään virhe ja keskeytetään
         if df.empty:
             return 
     
@@ -243,9 +240,6 @@ def main():
     st.markdown("### Ottelumuoto ja Simulaation Asetukset")
     
     all_players = st.session_state.get('all_players', ["Muokkaa itse"])
-    
-    # Ladataan alustavat arvot kerran, jos niitä ei ole asetettu
-    # Varmistetaan, että valitut nimet ovat edelleen listalla, muuten käytetään listan ensimmäistä.
     
     def get_initial_player_name(key, all_players):
         if key not in st.session_state or st.session_state[key] not in all_players:
@@ -259,7 +253,6 @@ def main():
     if 'b_name' not in st.session_state or st.session_state['b_name'] not in all_players:
         default_b_name = all_players[1] if len(all_players) > 1 else all_players[0]
         st.session_state['b_name'] = get_initial_player_name('b_name', all_players)
-        # Jos pelaajat olivat samat, asetetaan oletusarvo toiselle pelaajalle:
         if st.session_state['a_name'] == st.session_state['b_name'] and len(all_players) > 1:
              st.session_state['b_name'] = all_players[1]
         set_player_stats('b_name')
@@ -280,7 +273,7 @@ def main():
     with col_settings1:
         match_format = st.selectbox(
             "Ottelun Formaatti",
-            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO3 leg)'],
+            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO5 leg)'], # Päivitetty teksti
             key='match_format'
         )
 
@@ -296,7 +289,8 @@ def main():
                 "Settiä voittoon (esim. BO5 -> 3)",
                 min_value=1, max_value=15, step=1, key='sets_to_win'
             )
-            st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on BO3 leg).")
+            # Päivitetty kuvateksti vastaamaan BO5 Legiä
+            st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on **BO5 leg**, eli **3 legiä voittoon**).")
             
         
     with col_settings3:
@@ -320,7 +314,6 @@ def main():
     with col1:
         st.header("Pelaaja A")
         
-        # Haetaan indeksi turvallisesti
         try:
             default_a_index = all_players.index(st.session_state['a_name'])
         except ValueError:
@@ -356,13 +349,11 @@ def main():
     with col2:
         st.header("Pelaaja B")
         
-        # Haetaan indeksi turvallisesti
         try:
             default_b_index = all_players.index(st.session_state['b_name'])
         except ValueError:
              default_b_index = 0
              
-        # Varmistetaan, ettei A ja B ole sama pelaaja oletuksena
         if default_b_index == all_players.index(st.session_state['a_name']) and len(all_players) > 1:
             default_b_index = (default_b_index + 1) % len(all_players)
 
@@ -418,4 +409,3 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
