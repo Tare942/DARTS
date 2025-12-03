@@ -82,7 +82,7 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     
     # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
     WEIGHT_SCORING = 1.0  
-    WEIGHT_COP = 0.07     
+    WEIGHT_COP = 0.05     
     WEIGHT_3DA = 0.001    
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima
@@ -154,7 +154,7 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             if a_legs > b_legs:
                 a_match_wins += 1
                 
-    elif match_format == 'Set-malli (esim. BO5 set, setti on BO5 leg)':
+    elif match_format == 'Set-malli (esim. BO5 set, setti on BO3 leg)':
         sets_to_win = st.session_state['sets_to_win']
         
         for _ in range(iterations):
@@ -209,7 +209,7 @@ def main():
     st.title("🎯 Darts-ottelun Ennustaja (Monte Carlo Simulaatio)")
     st.markdown("### Ottelumuoto ja Simulaation Asetukset")
     
-    data_file_path = "MM 25.csv"
+    data_file_path = "MM 25 csv - Voitko tehdä kaikista osallistujista docs listan... (1).csv"
     
     if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
         load_data(data_file_path)
@@ -240,7 +240,7 @@ def main():
     with col_settings1:
         match_format = st.selectbox(
             "Ottelun Formaatti",
-            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO5 leg)'],
+            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO3 leg)'],
             key='match_format'
         )
 
@@ -256,7 +256,7 @@ def main():
                 "Settiä voittoon (esim. BO5 -> 3)",
                 min_value=1, max_value=15, step=1, key='sets_to_win'
             )
-            st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on BO5 leg).")
+            st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on BO3 leg).")
             
         
     with col_settings3:
