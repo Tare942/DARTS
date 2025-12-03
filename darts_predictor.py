@@ -1,35 +1,45 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import os 
 
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
-# (Ei muutoksia)
 
 @st.cache_resource
 def load_data(file_path):
     """Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt."""
+    
     try:
-        # Huom: Käytetään tiedostonimeä, joka on ollut käytössä aiemmin
+        # Yritetään lukea data
+        # HUOM: Erotin (sep=',') on valittu sen perusteella, että data on peräisin Excelistä/Google Docsista, 
+        # jossa pilkku on yleinen erotin.
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
+            # Puhdistetaan pelaajanimistä mahdolliset järjestysnumerot (esim. "1. ")
             df['Pelaajan Nimi'] = df['Pelaajan Nimi'].astype(str).str.replace(r'^\d+\.\s*', '', regex=True)
 
         float_cols = ['KAUSI 2025 (3DA)', 'COP (%)', 'STD (Hajonta)', 'TWS KA', 'RWS KA']
         
         for col in float_cols:
             if col in df.columns:
+                # Korvataan lainausmerkit ja pilkut pisteiksi desimaalien takia
                 df[col] = df[col].astype(str).str.replace('"', '').str.replace(',', '.', regex=False)
                 df[col] = pd.to_numeric(df[col], errors='coerce')
         
+        # Poistetaan rivit, joissa ei ole pelaajan nimeä
         df = df.dropna(subset=['Pelaajan Nimi']).reset_index(drop=True)
         
         st.session_state['player_data'] = df
         st.session_state['all_players'] = df['Pelaajan Nimi'].tolist()
+        st.success(f"Data ladattu onnistuneesti! ({len(df)} pelaajaa)")
         return df
         
+    except FileNotFoundError:
+        st.error(f"❌ Virhe: Tiedostoa '{file_path}' ei löydy. Tarkista tiedoston nimi ja polku.")
+        return pd.DataFrame()
     except Exception as e:
-        st.error(f"Virhe datan latauksessa (Tarkista tiedostonimi ja muoto): {e}")
+        st.error(f"❌ Virhe datan käsittelyssä. Tarkista, että tiedosto on oikeassa CSV-muodossa (erotin: pilkku, desimaali: pilkku/piste): {e}")
         return pd.DataFrame()
 
 
@@ -87,11 +97,9 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima
     if type == 'TWS':
-        # Hyökkääjä aloittaa: Käyttää TWS KA:ta, Vastustaja RWS KA:ta
         attacker_score = attacker_stats['TWS KA'] * WEIGHT_SCORING
         defender_score = defender_stats['RWS KA'] * WEIGHT_SCORING
-    else: # type == 'RWS'
-        # Hyökkääjä vastaanottaa: Käyttää RWS KA:ta, Vastustaja TWS KA:ta
+    else:
         attacker_score = attacker_stats['RWS KA'] * WEIGHT_SCORING
         defender_score = defender_stats['TWS KA'] * WEIGHT_SCORING
 
@@ -99,27 +107,23 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     attacker_boost = (attacker_stats['COP (%)'] * WEIGHT_COP) + (attacker_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
     defender_boost = (defender_stats['COP (%)'] * WEIGHT_COP) + (defender_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
     
-    # Kokonaisvahvuus
     total_attacker_strength = attacker_score + attacker_boost
     total_defender_strength = defender_score + defender_boost
     
-    # Estä nollalla jakaminen
     total_strength = total_attacker_strength + total_defender_strength
     if total_strength <= 0:
         return 0.5
         
-    # 3. Laske Legivoiton Todennäköisyys (LWP)
     prob_win = total_attacker_strength / total_strength
     
     return prob_win
 
 
-def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000): # ⚠️ ITERATIONS PÄIVITETTY
+def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000):
     """
     Simuloi koko ottelu Monte Carlo -tekniikalla, käyttäen uutta LWP-mallia.
     """
     
-    # 1. Laske legivoiton todennäköisyydet kerran:
     twp_a = calculate_leg_win_probability(a_stats, b_stats, type='TWS') 
     rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
     
@@ -165,7 +169,6 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             
             while a_sets < sets_to_win and b_sets < sets_to_win:
                 
-                # Simulaatio Yhdestä Setistä (BO3 Leg, 2 legiä voittoon)
                 a_legs = 0
                 b_legs = 0
                 leg_count_in_set = 0
@@ -192,7 +195,6 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
                 else:
                     b_sets += 1
                     
-                # Vaihda setin aloitusvuoro jokaisen setin jälkeen
                 current_start_player *= -1
                 set_count += 1
 
@@ -207,24 +209,62 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
 def main():
     st.set_page_config(page_title="Darts Ennustaja", layout="wide")
     st.title("🎯 Darts-ottelun Ennustaja (Monte Carlo Simulaatio)")
+    
+    # 💾 Datan lataus
+    st.markdown("### 💾 Datan lataus")
+    
+    # 🚨 PÄIVITETTY OLETUSTIEDOSTOPOLKU 🚨
+    default_file_path = "MM 25.csv"
+    
+    data_file_path = st.text_input(
+        "Syötä pelaajadataa sisältävän CSV-tiedoston nimi tai polku:",
+        value=default_file_path,
+        key='data_file_path_input'
+    )
+    
+    # Latausnappi
+    if st.button("Lataa Data Uudelleen"):
+        # Tyhjennä cache ja sessiotila pakottaaksesi uudelleenlatauksen
+        if 'player_data' in st.session_state:
+            del st.session_state['player_data']
+        # Käynnistetään sovellus uudelleen lataamaan data uudella/samalla polulla
+        st.cache_resource.clear()
+        st.rerun() 
+        
+    # Ladataan data, jos se puuttuu
+    if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
+        df = load_data(data_file_path)
+        # Jos lataus epäonnistui, näytetään virhe ja keskeytetään
+        if df.empty:
+            return 
+    
+    # --- UI JATKUU VAIN, JOS DATA ON LADATTU ---
+    st.markdown("---")
     st.markdown("### Ottelumuoto ja Simulaation Asetukset")
     
-    data_file_path = "MM 25.csv"
-    
-    if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
-        load_data(data_file_path)
-
     all_players = st.session_state.get('all_players', ["Muokkaa itse"])
-        
+    
     # Ladataan alustavat arvot kerran, jos niitä ei ole asetettu
-    if 'a_name' not in st.session_state:
-        st.session_state['a_name'] = all_players[0] if all_players else "Muokkaa itse"
+    # Varmistetaan, että valitut nimet ovat edelleen listalla, muuten käytetään listan ensimmäistä.
+    
+    def get_initial_player_name(key, all_players):
+        if key not in st.session_state or st.session_state[key] not in all_players:
+            return all_players[0] if all_players else "Muokkaa itse"
+        return st.session_state[key]
+        
+    if 'a_name' not in st.session_state or st.session_state['a_name'] not in all_players:
+        st.session_state['a_name'] = get_initial_player_name('a_name', all_players)
         set_player_stats('a_name')
-    if 'b_name' not in st.session_state:
+        
+    if 'b_name' not in st.session_state or st.session_state['b_name'] not in all_players:
         default_b_name = all_players[1] if len(all_players) > 1 else all_players[0]
-        st.session_state['b_name'] = default_b_name
+        st.session_state['b_name'] = get_initial_player_name('b_name', all_players)
+        # Jos pelaajat olivat samat, asetetaan oletusarvo toiselle pelaajalle:
+        if st.session_state['a_name'] == st.session_state['b_name'] and len(all_players) > 1:
+             st.session_state['b_name'] = all_players[1]
         set_player_stats('b_name')
         
+    # Asetukset
     if 'match_format' not in st.session_state:
         st.session_state['match_format'] = 'BO Leg (esim. BO9, 5 legiä voittoon)'
     if 'legs_to_win' not in st.session_state:
@@ -266,7 +306,7 @@ def main():
             key='start_player'
         )
     
-    # ⚠️ MUUTOS TÄSSÄ: OLETUSARVO 50000
+    # Simulaatioiden määrä 50 000
     N_ITERATIONS = st.number_input(
         "Simulaatioiden Määrä (N)",
         min_value=100, max_value=100000, step=500, value=50000 
@@ -280,8 +320,12 @@ def main():
     with col1:
         st.header("Pelaaja A")
         
-        default_a_index = all_players.index(st.session_state['a_name']) if st.session_state['a_name'] in all_players else 0
-        
+        # Haetaan indeksi turvallisesti
+        try:
+            default_a_index = all_players.index(st.session_state['a_name'])
+        except ValueError:
+             default_a_index = 0
+
         player_a_name = st.selectbox(
             "Valitse Pelaaja A", 
             all_players, 
@@ -312,7 +356,13 @@ def main():
     with col2:
         st.header("Pelaaja B")
         
-        default_b_index = all_players.index(st.session_state['b_name']) if st.session_state['b_name'] in all_players else 0
+        # Haetaan indeksi turvallisesti
+        try:
+            default_b_index = all_players.index(st.session_state['b_name'])
+        except ValueError:
+             default_b_index = 0
+             
+        # Varmistetaan, ettei A ja B ole sama pelaaja oletuksena
         if default_b_index == all_players.index(st.session_state['a_name']) and len(all_players) > 1:
             default_b_index = (default_b_index + 1) % len(all_players)
 
@@ -346,10 +396,8 @@ def main():
     # --- Ennusteen esittäminen ---
     if st.button("Laske Voittotodennäköisyys"):
         
-        # Muutetaan aloittaja numeeriseksi arvoksi (A: 1, B: -1)
         start_player_val = 1 if start_player_name == 'Pelaaja A' else -1
         
-        # Simuloidaan ottelu
         prob_a = simulate_game(a_stats, b_stats, match_format, start_player_val, iterations=N_ITERATIONS)
         prob_b = 1.0 - prob_a
         
