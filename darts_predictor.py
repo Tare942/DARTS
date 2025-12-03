@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import io
 
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
 
@@ -10,19 +11,13 @@ def load_data(file_path):
     Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt.
     """
     try:
-        # Ladataan data käyttäen pilkkua desimaalierottimena ja poistaen lainausmerkit
-        # Tässä käytetään useimpien sarakkeiden tyypiksi string, jotta 'replace' toimii
-        df = pd.read_csv(
-            file_path, 
-            sep=',', 
-            decimal=',',  # Yritetään lukea desimaalit pilkulla
-            thousands='.', # Jos tuhansissa käytetty pistettä (ei kovin yleinen, mutta varmuuden vuoksi)
-            encoding='utf-8'
-        )
+        # Ladataan data
+        df = pd.read_csv(file_path, sep=',') 
         
         # Puhdistetaan Pelaajan Nimi -sarake ylimääräisistä numeroista ja pisteistä (esim. "1. Luke Littler (England)" -> "Luke Littler (England)")
-        df['Pelaajan Nimi'] = df['Pelaajan Nimi'].str.replace(r'^\d+\.\s*', '', regex=True)
-        
+        if 'Pelaajan Nimi' in df.columns:
+            df['Pelaajan Nimi'] = df['Pelaajan Nimi'].astype(str).str.replace(r'^\d+\.\s*', '', regex=True)
+
         # Määriteltävät sarakkeet, joissa on pilkku desimaalierottimena ja pitäisi olla floatteja
         float_cols = ['KAUSI 2025 (3DA)', 'COP (%)', 'STD (Hajonta)', 'TWS KA', 'RWS KA']
         
@@ -41,7 +36,8 @@ def load_data(file_path):
         return df
         
     except Exception as e:
-        st.error(f"Virhe datan latauksessa: {e}")
+        # Pysyvä virheilmoitus, jos tiedostoa ei löydy tai lataus epäonnistuu
+        st.error(f"Virhe datan latauksessa (Tarkista tiedostonimi ja muoto): {e}")
         return pd.DataFrame()
 
 
@@ -60,7 +56,6 @@ def get_float_val(data, key, default_value):
     """Hakee arvon pelaajan tiedoista ja palauttaa float-luvun."""
     if data and key in data:
         value = data[key]
-        # Pandas-datassa arvo on jo float (tai NaN), jos esikäsittely onnistui
         if pd.notna(value):
             return float(value)
             
@@ -76,7 +71,7 @@ def calculate_win_probability(a_stats, b_stats):
     """
     # Esimerkki: Painotetaan kauden keskiarvoa (3DA) ja tarkistusprosenttia (COP)
     
-    # Käytetään 3DA:ta ja COP:ta (HUOM: COP:n tulisi olla pienempi kuin 1.0)
+    # Käytetään 3DA:ta ja COP:ta 
     a_score = a_stats['KAUSI 2025 (3DA)'] + (a_stats['COP (%)'] * 10) 
     b_score = b_stats['KAUSI 2025 (3DA)'] + (b_stats['COP (%)'] * 10) 
 
@@ -84,10 +79,6 @@ def calculate_win_probability(a_stats, b_stats):
         return 0.5 
         
     prob_a = a_score / (a_score + b_score)
-    
-    # STD (Hajonta) voisi vaikuttaa esimerkiksi todennäköisyyden tasoitukseen tai luotettavuuteen
-    # Nyt jätetään yksinkertaisuuden vuoksi pois peruslaskennasta.
-
     return prob_a
 
 
@@ -97,25 +88,29 @@ def main():
     st.set_page_config(page_title="Darts Ennustaja", layout="wide")
     st.title("🎯 Darts-ottelun Tulosennustin")
     
-    # Lataa data heti alussa
+    # KÄYTÄ AINA OIKEAA TIEDOSTONIMEÄ!
     data_file_path = "MM 25.csv"
     if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
         load_data(data_file_path)
 
     all_players = st.session_state.get('all_players', ["Muokkaa itse"])
     
-    if all_players == ["Muokkaa itse"]:
-        st.warning("Pelaajadataa ei voitu ladata. Tarkista tiedostonimi ja muoto.")
+    if len(all_players) == 1 and all_players[0] == "Muokkaa itse":
+        st.warning(f"Pelaajadataa ei voitu ladata tiedostosta: {data_file_path}. Tarkista tiedostonimi ja muoto.")
         
     col1, col2 = st.columns(2)
 
     # --- Pelaaja A ---
     with col1:
         st.header("Pelaaja A")
+        
+        # Oletusvalinta: Luke Littler
+        default_a_index = all_players.index("Luke Littler (England)") if "Luke Littler (England)" in all_players else 0
+        
         player_a_name = st.selectbox(
             "Valitse Pelaaja A", 
             all_players, 
-            index=all_players.index("Luke Littler (England)") if "Luke Littler (England)" in all_players else 0, 
+            index=default_a_index, 
             key='a_name'
         )
         
@@ -131,7 +126,7 @@ def main():
             key='a_3da', format="%.2f"
         )
         
-        # UUSI: COP (%)
+        # COP (%)
         a_cop = st.number_input(
             "COP (Checkout %)",
             min_value=10.0, max_value=80.0, step=0.01,
@@ -139,15 +134,17 @@ def main():
             key='a_cop', format="%.2f"
         )
         
-        # UUSI: STD (Hajonta)
+        # 🟢 KORJAUS: Max value nostettu 40.0:een (oli 30.0) virheen estämiseksi
+        # STD (Hajonta)
         a_std = st.number_input(
             "STD (Pist. heittojen hajonta)",
-            min_value=10.0, max_value=30.0, step=0.01,
+            min_value=10.0, max_value=40.0, # <--- MUUTETTU TÄSTÄ
+            step=0.01,
             value=get_float_val(player_a_data, 'STD (Hajonta)', 20.0),
             key='a_std', format="%.2f"
         )
         
-        # TWS KA (Total Win/Score KA) - HEITTÄJÄN ALOITTAMA LEGI
+        # TWS KA (HEITTÄJÄN ALOITTAMA LEGI)
         a_tws = st.number_input(
             "TWS KA (Avg. Score / Leg Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
@@ -155,7 +152,7 @@ def main():
             key='a_tws', format="%.2f"
         )
         
-        # RWS KA (Receiver Win/Score KA) - VASTAANOTETTU LEGI
+        # RWS KA (VASTAANOTETTU LEGI)
         a_rws = st.number_input(
             "RWS KA (Avg. Score / Leg Opponent Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
@@ -172,10 +169,16 @@ def main():
     # --- Pelaaja B ---
     with col2:
         st.header("Pelaaja B")
+        
+        # Oletusvalinta: Luke Humphries
+        default_b_index = all_players.index("Luke Humphries (England)") if "Luke Humphries (England)" in all_players else 0
+        if default_b_index == default_a_index and len(all_players) > 1:
+            default_b_index = (default_b_index + 1) % len(all_players)
+        
         player_b_name = st.selectbox(
             "Valitse Pelaaja B", 
             all_players, 
-            index=all_players.index("Luke Humphries (England)") if "Luke Humphries (England)" in all_players else 0, 
+            index=default_b_index, 
             key='b_name'
         )
         
@@ -191,7 +194,7 @@ def main():
             key='b_3da', format="%.2f"
         )
         
-        # UUSI: COP (%)
+        # COP (%)
         b_cop = st.number_input(
             "COP (Checkout %)",
             min_value=10.0, max_value=80.0, step=0.01,
@@ -199,15 +202,17 @@ def main():
             key='b_cop', format="%.2f"
         )
         
-        # UUSI: STD (Hajonta)
+        # 🟢 KORJAUS: Max value nostettu 40.0:een (oli 30.0) virheen estämiseksi
+        # STD (Hajonta)
         b_std = st.number_input(
             "STD (Pist. heittojen hajonta)",
-            min_value=10.0, max_value=30.0, step=0.01,
+            min_value=10.0, max_value=40.0, # <--- MUUTETTU TÄSTÄ
+            step=0.01,
             value=get_float_val(player_b_data, 'STD (Hajonta)', 20.0),
             key='b_std', format="%.2f"
         )
         
-        # TWS KA (Total Win/Score KA) - HEITTÄJÄN ALOITTAMA LEGI
+        # TWS KA (HEITTÄJÄN ALOITTAMA LEGI)
         b_tws = st.number_input(
             "TWS KA (Avg. Score / Leg Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
@@ -215,7 +220,7 @@ def main():
             key='b_tws', format="%.2f"
         )
         
-        # RWS KA (Receiver Win/Score KA) - VASTAANOTETTU LEGI
+        # RWS KA (VASTAANOTETTU LEGI)
         b_rws = st.number_input(
             "RWS KA (Avg. Score / Leg Opponent Started)", 
             min_value=60.0, max_value=120.0, step=0.01,
