@@ -93,7 +93,7 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     # TWS KA ja RWS KA ovat tärkeimmät, koska ne kuvaavat legin tulosta suoraan.
     # Muut arvon hienosäätävät tätä suhdetta.
     WEIGHT_SCORING = 1.0  # TWS KA / RWS KA on perusta
-    WEIGHT_COP = 0.05     # Checkout-prosentti: Pieni vaikutus kokonaisvahvuuteen
+    WEIGHT_COP = 0.07     # Checkout-prosentti: Pieni vaikutus kokonaisvahvuuteen
     WEIGHT_3DA = 0.001    # Yleinen Average: Tasoittava tekijä
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima
