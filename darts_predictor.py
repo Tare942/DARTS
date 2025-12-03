@@ -219,7 +219,7 @@ def main():
     st.title("🎯 Darts-ottelun Ennustaja (Monte Carlo Simulaatio)")
     st.markdown("### Ottelumuoto ja Simulaation Asetukset")
     
-    data_file_path = "MM 25 csv.csv"
+    data_file_path = "MM 25.csv"
     
     if 'player_data' not in st.session_state or st.session_state['player_data'].empty:
         load_data(data_file_path)
