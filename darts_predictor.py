@@ -154,7 +154,7 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             if a_legs > b_legs:
                 a_match_wins += 1
                 
-    elif match_format == 'Set-malli (esim. BO5 set, setti on BO3 leg)':
+    elif match_format == 'Set-malli (esim. BO5 set, setti on BO5 leg)':
         sets_to_win = st.session_state['sets_to_win']
         
         for _ in range(iterations):
@@ -240,7 +240,7 @@ def main():
     with col_settings1:
         match_format = st.selectbox(
             "Ottelun Formaatti",
-            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO3 leg)'],
+            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO5 leg)'],
             key='match_format'
         )
 
@@ -256,7 +256,7 @@ def main():
                 "Settiä voittoon (esim. BO5 -> 3)",
                 min_value=1, max_value=15, step=1, key='sets_to_win'
             )
-            st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on BO3 leg).")
+            st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on BO5 leg).")
             
         
     with col_settings3:
@@ -266,10 +266,10 @@ def main():
             key='start_player'
         )
     
-    # ⚠️ MUUTOS TÄSSÄ: OLETUSARVO 10000
+    # ⚠️ MUUTOS TÄSSÄ: OLETUSARVO 50000
     N_ITERATIONS = st.number_input(
         "Simulaatioiden Määrä (N)",
-        min_value=100, max_value=100000, step=500, value=10000 
+        min_value=100, max_value=100000, step=500, value=50000 
     )
 
     st.markdown("---")
