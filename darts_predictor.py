@@ -10,22 +10,18 @@ def load_data(file_path):
     """Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt."""
     
     try:
-        # Yritetään lukea data
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
-            # Puhdistetaan pelaajanimistä mahdolliset järjestysnumerot (esim. "1. ")
             df['Pelaajan Nimi'] = df['Pelaajan Nimi'].astype(str).str.replace(r'^\d+\.\s*', '', regex=True)
 
         float_cols = ['KAUSI 2025 (3DA)', 'COP (%)', 'STD (Hajonta)', 'TWS KA', 'RWS KA']
         
         for col in float_cols:
             if col in df.columns:
-                # Korvataan lainausmerkit ja pilkut pisteiksi desimaalien takia
                 df[col] = df[col].astype(str).str.replace('"', '').str.replace(',', '.', regex=False)
                 df[col] = pd.to_numeric(df[col], errors='coerce')
         
-        # Poistetaan rivit, joissa ei ole pelaajan nimeä
         df = df.dropna(subset=['Pelaajan Nimi']).reset_index(drop=True)
         
         st.session_state['player_data'] = df
@@ -84,20 +80,18 @@ def set_player_stats(player_key):
 
 def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     """
-    Laskee Legivoiton Todennäköisyyden (LWP) suhteellisen vahvuuden perusteella 
-    käyttäen annettuja painotuksia.
+    Laskee Legivoiton Todennäköisyyden (LWP) suhteellisen vahvuuden perusteella.
     """
     
-    # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
     WEIGHT_SCORING = 1.0  
     WEIGHT_COP = 0.05     
     WEIGHT_3DA = 0.001    
     
-    # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima
+    # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima TWS/RWS roolin mukaan
     if type == 'TWS':
         attacker_score = attacker_stats['TWS KA'] * WEIGHT_SCORING
         defender_score = defender_stats['RWS KA'] * WEIGHT_SCORING
-    else:
+    else: # type == 'RWS' (Attacker is receiving the start)
         attacker_score = attacker_stats['RWS KA'] * WEIGHT_SCORING
         defender_score = defender_stats['TWS KA'] * WEIGHT_SCORING
 
@@ -119,11 +113,12 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
 
 def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000):
     """
-    Simuloi koko ottelu Monte Carlo -tekniikalla, käyttäen uutta LWP-mallia.
+    Simuloi koko ottelu Monte Carlo -tekniikalla.
     """
     
-    twp_a = calculate_leg_win_probability(a_stats, b_stats, type='TWS') 
-    rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
+    # Probabilities for A winning the leg:
+    twp_a = calculate_leg_win_probability(a_stats, b_stats, type='TWS') # A starts leg (TWS)
+    rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') # B starts leg (RWS)
     
     a_match_wins = 0
     
@@ -138,6 +133,7 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             
             while a_legs < legs_to_win and b_legs < legs_to_win:
                 
+                # Leg format: Starter alternates every leg (based on match start)
                 leg_starter_a = (current_start_player == 1 and leg_count % 2 == 0) or \
                                 (current_start_player == -1 and leg_count % 2 != 0)
                 
@@ -156,11 +152,11 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             if a_legs > b_legs:
                 a_match_wins += 1
                 
-    elif match_format == 'Set-malli (esim. BO5 set, setti on BO3 leg)':
+    elif match_format == 'Set-malli (esim. BO5 set, setti on BO5 leg)':
         sets_to_win = st.session_state['sets_to_win']
         
         for _ in range(iterations):
-            current_start_player = start_player
+            current_start_player = start_player # Match starter
             a_sets = 0
             b_sets = 0
             set_count = 0
@@ -172,12 +168,19 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
                 b_legs = 0
                 leg_count_in_set = 0
                 
-                # Ehto: Tarvitaan 3 legiä setin voittoon (a_legs < 3 ja b_legs < 3)
                 while a_legs < 3 and b_legs < 3: 
                     
-                    leg_starter_a = (current_start_player == 1 and leg_count_in_set % 2 == 0) or \
-                                    (current_start_player == -1 and leg_count_in_set % 2 != 0)
-                    
+                    # 🚨 KORJATTU LOGIIKKA: Legien aloittajan vuorottelu setin sisällä
+                    is_set_starter_a = (current_start_player == 1)
+
+                    if is_set_starter_a:
+                        # Jos A aloittaa setin, A aloittaa parilliset legity (0, 2, 4)
+                        leg_starter_a = (leg_count_in_set % 2 == 0)
+                    else:
+                        # Jos B aloittaa setin, A aloittaa parittomat legity (1, 3, 5)
+                        leg_starter_a = (leg_count_in_set % 2 != 0)
+
+                    # TWS/RWS roolin asetus
                     if leg_starter_a:
                         prob_a_win = twp_a
                     else:
@@ -195,7 +198,8 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
                 else:
                     b_sets += 1
                     
-                current_start_player *= -1
+                # Vuorotellaan seuraavan setin aloittaja
+                current_start_player *= -1 
                 set_count += 1
 
             if a_sets > b_sets:
@@ -213,7 +217,6 @@ def main():
     # 💾 Datan lataus
     st.markdown("### 💾 Datan lataus")
     
-    # Oletustiedostopolku on nyt "MM 25.csv"
     default_file_path = "MM 25.csv"
     
     data_file_path = st.text_input(
@@ -271,9 +274,10 @@ def main():
     col_settings1, col_settings2, col_settings3 = st.columns(3)
 
     with col_settings1:
+        # Päivitetty teksti
         match_format = st.selectbox(
             "Ottelun Formaatti",
-            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO5 leg)'], # Päivitetty teksti
+            ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO5 leg)'], 
             key='match_format'
         )
 
@@ -289,7 +293,6 @@ def main():
                 "Settiä voittoon (esim. BO5 -> 3)",
                 min_value=1, max_value=15, step=1, key='sets_to_win'
             )
-            # Päivitetty kuvateksti vastaamaan BO5 Legiä
             st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on **BO5 leg**, eli **3 legiä voittoon**).")
             
         
