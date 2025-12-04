@@ -3,6 +3,41 @@ import pandas as pd
 import numpy as np
 import os 
 
+# --- 0. ENNUSTUSTEKSIN APUFUNKTIOT ---
+
+def get_score_prediction_text(prob_win_a, match_format, legs_or_sets_to_win):
+    """Generates a text-based score prediction based on win probability (Pelaaja A:n näkökulmasta)."""
+    P = prob_win_a * 100
+    W = legs_or_sets_to_win
+    
+    if match_format == 'BO Leg (esim. BO9, 5 legiä voittoon)':
+        # BO 2W-1 leg, e.g., BO9 -> W=5
+        if P > 80:
+            return f"A:n selkeä voitto ({W}-0, {W}-1 tai {W}-2 leg-tulos)."
+        elif P > 65:
+            return f"A:n todennäköinen voitto ({W}-2, {W}-3 tai {W}-4 leg-tulos)."
+        elif P > 50:
+            return f"Tasainen A:n voitto, esim. {W}-4."
+        elif P < 20:
+            return f"B:n selkeä voitto."
+        else: # 20% to 50%
+            return f"B:n todennäköinen voitto."
+    
+    elif match_format == 'Set-malli (esim. BO5 set, setti on BO5 leg)':
+        # BO 5 Set -> W=3 sets
+        if P > 80:
+            return "A:n selkeä voitto (3-0 tai 3-1 seteissä)."
+        elif P > 65:
+            return "A:n todennäköinen voitto (3-1 tai 3-2 seteissä)."
+        elif P > 50:
+            return "Tasainen A:n voitto (3-2 seteissä)."
+        elif P < 20:
+            return "B:n selkeä voitto (0-3 tai 1-3 seteissä)."
+        else: # 20% to 50%
+            return "B:n todennäköinen voitto."
+            
+    return "Ennustetta ei saatavilla tälle formaatille."
+
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
 
 @st.cache_resource
@@ -13,12 +48,15 @@ def load_data(file_path):
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
+            # Puhdistetaan pelaajanimistä mahdolliset järjestysnumerot (esim. "1. ")
             df['Pelaajan Nimi'] = df['Pelaajan Nimi'].astype(str).str.replace(r'^\d+\.\s*', '', regex=True)
 
-        float_cols = ['KAUSI 2025 (3DA)', 'COP (%)', 'STD (Hajonta)', 'TWS KA', 'RWS KA']
+        # FDI sisällytetty numeerisiin sarakkeisiin
+        float_cols = ['KAUSI 2025 (3DA)', 'COP (%)', 'STD (Hajonta)', 'FDI', 'TWS KA', 'RWS KA']
         
         for col in float_cols:
             if col in df.columns:
+                # Korvataan lainausmerkit ja pilkut pisteiksi desimaalien takia
                 df[col] = df[col].astype(str).str.replace('"', '').str.replace(',', '.', regex=False)
                 df[col] = pd.to_numeric(df[col], errors='coerce')
         
@@ -65,6 +103,7 @@ def set_player_stats(player_key):
         'KAUSI 2025 (3DA)': (90.0, '3da'),
         'COP (%)': (35.0, 'COP_%'),
         'STD (Hajonta)': (20.0, 'STD_Hajonta'),
+        'FDI': (1500.0, 'FDI'), 
         'TWS KA': (90.0, 'TWS_KA'),
         'RWS KA': (90.0, 'RWS_KA'),
     }
@@ -81,11 +120,14 @@ def set_player_stats(player_key):
 def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     """
     Laskee Legivoiton Todennäköisyyden (LWP) suhteellisen vahvuuden perusteella.
+    Käyttää päivitettyä FDI-painotusta (0.003).
     """
     
+    # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
     WEIGHT_SCORING = 1.0  
     WEIGHT_COP = 0.05     
     WEIGHT_3DA = 0.001    
+    WEIGHT_FDI = 0.003    # FDI:n painotus (käyttäjän pyytämä 0.003)
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima TWS/RWS roolin mukaan
     if type == 'TWS':
@@ -95,9 +137,19 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
         attacker_score = attacker_stats['RWS KA'] * WEIGHT_SCORING
         defender_score = defender_stats['TWS KA'] * WEIGHT_SCORING
 
-    # 2. Lisätään hienosäätö COP ja 3DA perusteella
-    attacker_boost = (attacker_stats['COP (%)'] * WEIGHT_COP) + (attacker_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
-    defender_boost = (defender_stats['COP (%)'] * WEIGHT_COP) + (defender_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA)
+    # 2. Lisätään hienosäätö COP, 3DA ja FDI perusteella
+    
+    # Hyökkääjän FDI-kontribuutio
+    fdi_contribution_a = attacker_stats.get('FDI', 0) * WEIGHT_FDI
+    attacker_boost = (attacker_stats['COP (%)'] * WEIGHT_COP) + \
+                     (attacker_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA) + \
+                     fdi_contribution_a
+    
+    # Vastustajan FDI-kontribuutio
+    fdi_contribution_b = defender_stats.get('FDI', 0) * WEIGHT_FDI
+    defender_boost = (defender_stats['COP (%)'] * WEIGHT_COP) + \
+                     (defender_stats['KAUSI 2025 (3DA)'] * WEIGHT_3DA) + \
+                     fdi_contribution_b
     
     total_attacker_strength = attacker_score + attacker_boost
     total_defender_strength = defender_score + defender_boost
@@ -170,7 +222,7 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
                 
                 while a_legs < 3 and b_legs < 3: 
                     
-                    # 🚨 KORJATTU LOGIIKKA: Legien aloittajan vuorottelu setin sisällä
+                    # Logiikka legien aloittajan vuorotteluun setin sisällä
                     is_set_starter_a = (current_start_player == 1)
 
                     if is_set_starter_a:
@@ -244,6 +296,7 @@ def main():
     
     all_players = st.session_state.get('all_players', ["Muokkaa itse"])
     
+    # Initial player state setup (ensures stats are loaded when players are selected)
     def get_initial_player_name(key, all_players):
         if key not in st.session_state or st.session_state[key] not in all_players:
             return all_players[0] if all_players else "Muokkaa itse"
@@ -254,27 +307,24 @@ def main():
         set_player_stats('a_name')
         
     if 'b_name' not in st.session_state or st.session_state['b_name'] not in all_players:
-        default_b_name = all_players[1] if len(all_players) > 1 else all_players[0]
+        default_b_name = all_players[1] if len(all_players) > 1 and all_players[0] == all_players[1] else all_players[0]
         st.session_state['b_name'] = get_initial_player_name('b_name', all_players)
         if st.session_state['a_name'] == st.session_state['b_name'] and len(all_players) > 1:
              st.session_state['b_name'] = all_players[1]
         set_player_stats('b_name')
         
-    # Asetukset
+    # Otteluformaatin asetukset
     if 'match_format' not in st.session_state:
         st.session_state['match_format'] = 'BO Leg (esim. BO9, 5 legiä voittoon)'
     if 'legs_to_win' not in st.session_state:
         st.session_state['legs_to_win'] = 5
     if 'sets_to_win' not in st.session_state:
         st.session_state['sets_to_win'] = 3
-    if 'start_player' not in st.session_state:
-        st.session_state['start_player'] = 'Pelaaja A'
 
     
-    col_settings1, col_settings2, col_settings3 = st.columns(3)
+    col_settings1, col_settings2 = st.columns(2) # Poistettu 3. sarake
 
     with col_settings1:
-        # Päivitetty teksti
         match_format = st.selectbox(
             "Ottelun Formaatti",
             ['BO Leg (esim. BO9, 5 legiä voittoon)', 'Set-malli (esim. BO5 set, setti on BO5 leg)'], 
@@ -296,13 +346,6 @@ def main():
             st.caption(f"Simuloidaan Best of {sets_to_win * 2 - 1} settiä (setti on **BO5 leg**, eli **3 legiä voittoon**).")
             
         
-    with col_settings3:
-        start_player_name = st.selectbox(
-            "Kuka Aloittaa Ottelun?",
-            ['Pelaaja A', 'Pelaaja B'],
-            key='start_player'
-        )
-    
     # Simulaatioiden määrä 50 000
     N_ITERATIONS = st.number_input(
         "Simulaatioiden Määrä (N)",
@@ -338,13 +381,15 @@ def main():
         st.number_input("STD (Hajonta)", min_value=10.0, max_value=40.0, step=0.01, key='a_STD_Hajonta', format="%.2f")
         st.number_input("TWS KA (Avg. Score / Leg Started)", min_value=60.0, max_value=120.0, step=0.01, key='a_TWS_KA', format="%.2f")
         st.number_input("RWS KA (Avg. Score / Leg Opponent Started)", min_value=60.0, max_value=120.0, step=0.01, key='a_RWS_KA', format="%.2f")
+        st.number_input("FDI (Elo-vastine)", min_value=1000.0, max_value=3000.0, step=1.0, key='a_FDI', format="%.1f")
         
         a_stats = {
             'TWS KA': st.session_state['a_TWS_KA'], 
             'RWS KA': st.session_state['a_RWS_KA'], 
             'KAUSI 2025 (3DA)': st.session_state['a_3da'],
             'COP (%)': st.session_state['a_COP_%'], 
-            'STD (Hajonta)': st.session_state['a_STD_Hajonta']
+            'STD (Hajonta)': st.session_state['a_STD_Hajonta'],
+            'FDI': st.session_state['a_FDI']
         }
 
 
@@ -376,13 +421,15 @@ def main():
         st.number_input("STD (Hajonta)", min_value=10.0, max_value=40.0, step=0.01, key='b_STD_Hajonta', format="%.2f")
         st.number_input("TWS KA (Avg. Score / Leg Started)", min_value=60.0, max_value=120.0, step=0.01, key='b_TWS_KA', format="%.2f")
         st.number_input("RWS KA (Avg. Score / Leg Opponent Started)", min_value=60.0, max_value=120.0, step=0.01, key='b_RWS_KA', format="%.2f")
+        st.number_input("FDI (Elo-vastine)", min_value=1000.0, max_value=3000.0, step=1.0, key='b_FDI', format="%.1f")
 
         b_stats = {
             'TWS KA': st.session_state['b_TWS_KA'], 
             'RWS KA': st.session_state['b_RWS_KA'], 
             'KAUSI 2025 (3DA)': st.session_state['b_3da'],
             'COP (%)': st.session_state['b_COP_%'], 
-            'STD (Hajonta)': st.session_state['b_STD_Hajonta']
+            'STD (Hajonta)': st.session_state['b_STD_Hajonta'],
+            'FDI': st.session_state['b_FDI']
         }
 
     st.markdown("---")
@@ -390,25 +437,65 @@ def main():
     # --- Ennusteen esittäminen ---
     if st.button("Laske Voittotodennäköisyys"):
         
-        start_player_val = 1 if start_player_name == 'Pelaaja A' else -1
-        
-        prob_a = simulate_game(a_stats, b_stats, match_format, start_player_val, iterations=N_ITERATIONS)
-        prob_b = 1.0 - prob_a
-        
-        st.success(f"## 🏆 Ottelun Ennuste ({N_ITERATIONS} Simulaatiota)")
-        st.info(f"Ottelun aloittaa: **{start_player_name}** | Formaatti: **{match_format}**")
-        
-        col_prob_a, col_prob_b = st.columns(2)
-        
-        with col_prob_a:
-            st.markdown(f"**{player_a_name}** voittotodennäköisyys:")
-            st.metric(label="Todennäköisyys", value=f"{prob_a * 100:.1f} %")
-            st.progress(prob_a)
+        # Määritetään voittoon tarvittava määrä ennustetekstiä varten
+        if st.session_state['match_format'] == 'BO Leg (esim. BO9, 5 legiä voittoon)':
+            W = st.session_state['legs_to_win']
+        else:
+            W = st.session_state['sets_to_win']
             
-        with col_prob_b:
-            st.markdown(f"**{player_b_name}** voittotodennäköisyys:")
-            st.metric(label="Todennäköisyys", value=f"{prob_b * 100:.1f} %")
-            st.progress(prob_b)
+        st.success(f"## 🏆 Ottelun Ennuste ({N_ITERATIONS} Simulaatiota) | Formaatti: **{st.session_state['match_format']}**")
+        
+        st.markdown("---")
+        
+        # --- Simulaatio 1: Pelaaja A Aloittaa Ottelun ---
+        st.markdown("### 🥇 Skenaario 1: **" + player_a_name + "** Aloittaa Ottelun")
+        
+        prob_a_start_A = simulate_game(a_stats, b_stats, st.session_state['match_format'], 1, iterations=N_ITERATIONS)
+        prob_b_start_A = 1.0 - prob_a_start_A
+        
+        col_a1, col_b1 = st.columns(2)
+        
+        with col_a1:
+            st.metric(label=f"**{player_a_name}** voitto", value=f"{prob_a_start_A * 100:.1f} %")
+        with col_b1:
+            st.metric(label=f"**{player_b_name}** voitto", value=f"{prob_b_start_A * 100:.1f} %")
+            
+        score_text_start_A = get_score_prediction_text(prob_a_start_A, st.session_state['match_format'], W)
+        st.info(f"**Tulosennuste:** {score_text_start_A.replace('A', player_a_name).replace('B', player_b_name)}")
+        st.progress(prob_a_start_A)
+
+        st.markdown("---")
+
+        # --- Simulaatio 2: Pelaaja B Aloittaa Ottelun ---
+        st.markdown("### 🥈 Skenaario 2: **" + player_b_name + "** Aloittaa Ottelun")
+
+        prob_a_start_B = simulate_game(a_stats, b_stats, st.session_state['match_format'], -1, iterations=N_ITERATIONS)
+        prob_b_start_B = 1.0 - prob_a_start_B
+        
+        col_a2, col_b2 = st.columns(2)
+        
+        with col_a2:
+            st.metric(label=f"**{player_a_name}** voitto", value=f"{prob_a_start_B * 100:.1f} %")
+        with col_b2:
+            st.metric(label=f"**{player_b_name}** voitto", value=f"{prob_b_start_B * 100:.1f} %")
+            
+        score_text_start_B = get_score_prediction_text(prob_a_start_B, st.session_state['match_format'], W)
+        st.info(f"**Tulosennuste:** {score_text_start_B.replace('A', player_a_name).replace('B', player_b_name)}")
+        st.progress(prob_a_start_B)
+
+        st.markdown("---")
+        
+        # Näytetään legivoiton todennäköisyydet (lisätietona)
+        twp_a = calculate_leg_win_probability(a_stats, b_stats, type='TWS') 
+        rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
+        
+        st.markdown("### 🎯 Legivoiton Todennäköisyydet")
+        col_leg_1, col_leg_2 = st.columns(2)
+        
+        with col_leg_1:
+            st.info(f"**{player_a_name}** aloittaa Legin (TWS): **{twp_a * 100:.1f} %**")
+        with col_leg_2:
+            st.info(f"**{player_a_name}** vastaanottaa Legin (RWS): **{rwp_a * 100:.1f} %**")
 
 
 if __name__ == '__main__':
