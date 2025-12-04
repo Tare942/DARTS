@@ -38,27 +38,30 @@ def get_score_prediction_text(prob_win_a, match_format, legs_or_sets_to_win, pla
 
     # 2. Määritellään SET-muodon ennusteet (W = voittoon tarvittava settien määrä)
     else: # Set-malli
-        S = W 
-        S_loss_close = W - 1
+        S = W # Sets to win
+        S_Loss_Tight = S - 1 # Tiukin mahdollinen häviö (esim. 7-6)
+        S_Loss_Mid = S - 2   # Keskihäviö (esim. 7-5)
 
         if P > 80:
             win_msg = f"{player_a_name}n selkeä voitto."
             score_example = f"({S}-0 tai {S}-1 seteissä)."
         elif P > 65:
             win_msg = f"{player_a_name}n todennäköinen voitto."
-            score_example = f"({S}-1 tai {S}-2 seteissä)."
+            # Käytetään dynaamisia häviöasetuksia, esim. 7-2, 7-3, 7-4.
+            score_example = f"({S}-2, {S}-3 tai {S}-4 seteissä)."
         elif P > 50.5:
             win_msg = f"Tasainen {player_a_name}n voitto."
-            score_example = f"({S}-2 seteissä)."
+            # TIUKIN MAHDOLLINEN VOITTO: S - (S-1)
+            score_example = f"({S}-{S_Loss_Tight} seteissä)." 
         elif P < 19.5:
             win_msg = f"{player_b_name}n selkeä voitto."
             score_example = f"(esim. 0-{S} tai 1-{S} seteissä)."
         elif P < 35:
             win_msg = f"{player_b_name}n todennäköinen voitto."
-            score_example = f"(esim. 1-{S} tai 2-{S} seteissä)."
+            score_example = f"(esim. 4-{S} tai 3-{S} seteissä)."
         else:
             win_msg = "Erittäin tasainen ottelu."
-            score_example = f"({S_loss_close}-{S} tai {S}-{S_loss_close} seteissä)."
+            score_example = f"({S_Loss_Tight}-{S} tai {S}-{S_Loss_Tight} seteissä)."
 
     return f"{win_msg} {score_example}"
 
@@ -436,10 +439,7 @@ def main():
         except ValueError:
              default_b_index = 0
              
-        # TÄMÄ ONGELMALLINEN LOHKO POISTETTU: 
-        # Tässä kohdassa player_b_name ei ollut vielä määritelty.
-        # if player_a_name == player_b_name and len(all_players) > 1:
-        #     default_b_index = (default_b_index + 1) % len(all_players)
+        # Ongelmallinen lohko poistettu.
 
         player_b_name = st.selectbox(
             "Valitse Pelaaja B", 
