@@ -69,7 +69,6 @@ def load_data(file_path):
     """Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt."""
     
     try:
-        # TÄRKEÄÄ: Määritetty tiedosto MM 25 csv... (1).csv on tässä käytössä
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
@@ -437,9 +436,10 @@ def main():
         except ValueError:
              default_b_index = 0
              
-        if player_a_name == player_b_name and len(all_players) > 1:
-            # Varmistetaan, ettei B ole sama kuin A, jos listassa on useampi pelaaja
-            default_b_index = (default_b_index + 1) % len(all_players)
+        # TÄMÄ ONGELMALLINEN LOHKO POISTETTU: 
+        # Tässä kohdassa player_b_name ei ollut vielä määritelty.
+        # if player_a_name == player_b_name and len(all_players) > 1:
+        #     default_b_index = (default_b_index + 1) % len(all_players)
 
         player_b_name = st.selectbox(
             "Valitse Pelaaja B", 
