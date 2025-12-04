@@ -8,46 +8,58 @@ import os
 def get_score_prediction_text(prob_win_a, match_format, legs_or_sets_to_win, player_a_name, player_b_name):
     """Generates a text-based score prediction based on win probability (Pelaaja A:n näkökulmasta)."""
     P = prob_win_a * 100
-    W = legs_or_sets_to_win
+    W = legs_or_sets_to_win # Legs or Sets to win
     
-    # Määritellään kynnysarvot ja tulostekstit
-    if P > 80:
-        win_msg = f"{player_a_name}n selkeä voitto."
-        if match_format.startswith('BO Leg'):
-            score_example = f"({W}-0, {W}-1 tai {W}-2 leg-tulos)"
+    # 1. Määritellään LEG-muodon ennusteet
+    if match_format.startswith('BO Leg'):
+        W_loss_close = W - 1 # Lähin häviötulos (esim. BO25, 13-12)
+        W_loss_mid = W - 2  # Keskihäviötulos (esim. BO25, 13-11)
+        
+        # Määritetään voiton kynnysarvot (A voittaa)
+        if P > 80:
+            win_msg = f"{player_a_name}n selkeä voitto."
+            score_example = f"({W}-0, {W}-1 tai {W}-2 leg-tulos)."
+        elif P > 65:
+            win_msg = f"{player_a_name}n todennäköinen voitto."
+            score_example = f"({W}-2, {W}-3 tai {W}-4 leg-tulos)."
+        elif P > 50.5:
+            win_msg = f"Tasainen {player_a_name}n voitto."
+            score_example = f"({W}-{W_loss_mid} tai {W}-{W_loss_close} leg-tulos)."
+        # Määritetään häviön kynnysarvot (B voittaa)
+        elif P < 19.5:
+            win_msg = f"{player_b_name}n selkeä voitto."
+            score_example = f"(esim. 0-{W} tai 1-{W} leg-tulos)."
+        elif P < 35:
+            win_msg = f"{player_b_name}n todennäköinen voitto."
+            score_example = f"(esim. 4-{W} tai 3-{W} leg-tulos)."
         else:
-            score_example = "(3-0 tai 3-1 seteissä)"
-    elif P > 65:
-        win_msg = f"{player_a_name}n todennäköinen voitto."
-        if match_format.startswith('BO Leg'):
-            score_example = f"({W}-2, {W}-3 tai {W}-4 leg-tulos)"
+            win_msg = "Erittäin tasainen ottelu."
+            score_example = f"({W_loss_close}-{W} tai {W}-{W_loss_close} leg-tulos)."
+
+    # 2. Määritellään SET-muodon ennusteet (W = voittoon tarvittava settien määrä)
+    else: # Set-malli
+        S = W 
+        S_loss_close = W - 1
+
+        if P > 80:
+            win_msg = f"{player_a_name}n selkeä voitto."
+            score_example = f"({S}-0 tai {S}-1 seteissä)."
+        elif P > 65:
+            win_msg = f"{player_a_name}n todennäköinen voitto."
+            score_example = f"({S}-1 tai {S}-2 seteissä)."
+        elif P > 50.5:
+            win_msg = f"Tasainen {player_a_name}n voitto."
+            score_example = f"({S}-2 seteissä)."
+        elif P < 19.5:
+            win_msg = f"{player_b_name}n selkeä voitto."
+            score_example = f"(esim. 0-{S} tai 1-{S} seteissä)."
+        elif P < 35:
+            win_msg = f"{player_b_name}n todennäköinen voitto."
+            score_example = f"(esim. 1-{S} tai 2-{S} seteissä)."
         else:
-            score_example = "(3-1 tai 3-2 seteissä)"
-    elif P > 50.5:
-        win_msg = f"Tasainen {player_a_name}n voitto."
-        if match_format.startswith('BO Leg'):
-            score_example = f"({W}-10 tai {W}-11 leg-tulos BO25:ssa, esim.)"
-        else:
-            score_example = "(3-2 seteissä)"
-    elif P < 19.5:
-        win_msg = f"{player_b_name}n selkeä voitto."
-        if match_format.startswith('BO Leg'):
-            score_example = f"(esim. 0-{W} tai 1-{W} leg-tulos)"
-        else:
-            score_example = "(0-3 tai 1-3 seteissä)"
-    elif P < 35:
-        win_msg = f"{player_b_name}n todennäköinen voitto."
-        if match_format.startswith('BO Leg'):
-            score_example = f"(esim. 3-{W} tai 4-{W} leg-tulos)"
-        else:
-            score_example = "(1-3 tai 2-3 seteissä)"
-    else:
-        win_msg = "Erittäin tasainen ottelu."
-        if match_format.startswith('BO Leg'):
-            score_example = f"({W}-12 tai 12-{W} leg-tulos BO25:ssa)"
-        else:
-            score_example = "(3-2 tai 2-3 seteissä)"
-            
+            win_msg = "Erittäin tasainen ottelu."
+            score_example = f"({S_loss_close}-{S} tai {S}-{S_loss_close} seteissä)."
+
     return f"{win_msg} {score_example}"
 
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
@@ -57,6 +69,7 @@ def load_data(file_path):
     """Lataa pelaajadatan CSV-tiedostosta ja tekee tarvittavat esikäsittelyt."""
     
     try:
+        # TÄRKEÄÄ: Määritetty tiedosto MM 25 csv... (1).csv on tässä käytössä
         df = pd.read_csv(file_path, sep=',') 
         
         if 'Pelaajan Nimi' in df.columns:
@@ -283,7 +296,8 @@ def main():
     # 💾 Datan lataus
     st.markdown("### 💾 Datan lataus")
     
-    default_file_path = "MM 25.csv"
+    # Oletettu tiedostonimi saatavilla olevasta datasta
+    default_file_path = "MM 25 csv - Voitko tehdä kaikista osallistujista docs listan... (1).csv"
     
     data_file_path = st.text_input(
         "Syötä pelaajadataa sisältävän CSV-tiedoston nimi tai polku:",
@@ -313,6 +327,10 @@ def main():
     # Initial player state setup (ensures stats are loaded when players are selected)
     def get_initial_player_name(key, all_players):
         if key not in st.session_state or st.session_state[key] not in all_players:
+            # Yritetään hakea nimi ilman numeroa (esim. "Luke Littler") jos listassa on "1. Luke Littler"
+            clean_name = st.session_state.get(key, all_players[0] if all_players else "Muokkaa itse").split('. ', 1)[-1]
+            if clean_name in all_players:
+                return clean_name
             return all_players[0] if all_players else "Muokkaa itse"
         return st.session_state[key]
         
@@ -321,10 +339,10 @@ def main():
         set_player_stats('a_name')
         
     if 'b_name' not in st.session_state or st.session_state['b_name'] not in all_players:
-        default_b_name = all_players[1] if len(all_players) > 1 and all_players[0] == all_players[1] else all_players[0]
         st.session_state['b_name'] = get_initial_player_name('b_name', all_players)
         if st.session_state['a_name'] == st.session_state['b_name'] and len(all_players) > 1:
-             st.session_state['b_name'] = all_players[1]
+             # Asetetaan Pelaaja B oletuksena toiseksi pelaajaksi jos A ja B ovat samat
+             st.session_state['b_name'] = all_players[1] if len(all_players) > 1 else st.session_state['a_name']
         set_player_stats('b_name')
         
     # Otteluformaatin asetukset
@@ -349,7 +367,7 @@ def main():
         if match_format == 'BO Leg (esim. BO9, 5 legiä voittoon)':
             legs_to_win = st.number_input(
                 "Legiä voittoon (esim. BO9 -> 5)",
-                min_value=1, max_value=25, step=1, key='legs_to_win'
+                min_value=1, max_value=50, step=1, key='legs_to_win'
             )
             st.caption(f"Simuloidaan Best of {legs_to_win * 2 - 1} legiä.")
         else:
@@ -375,7 +393,9 @@ def main():
         st.header("Pelaaja A")
         
         try:
-            default_a_index = all_players.index(st.session_state['a_name'])
+            # Haetaan indeksi ilman numeroa, jos listassa on numeroita
+            clean_name_a = st.session_state['a_name'].split('. ', 1)[-1]
+            default_a_index = all_players.index(next((p for p in all_players if clean_name_a in p), st.session_state['a_name']))
         except ValueError:
              default_a_index = 0
 
@@ -412,11 +432,13 @@ def main():
         st.header("Pelaaja B")
         
         try:
-            default_b_index = all_players.index(st.session_state['b_name'])
+            clean_name_b = st.session_state['b_name'].split('. ', 1)[-1]
+            default_b_index = all_players.index(next((p for p in all_players if clean_name_b in p), st.session_state['b_name']))
         except ValueError:
              default_b_index = 0
              
-        if default_b_index == all_players.index(st.session_state['a_name']) and len(all_players) > 1:
+        if player_a_name == player_b_name and len(all_players) > 1:
+            # Varmistetaan, ettei B ole sama kuin A, jos listassa on useampi pelaaja
             default_b_index = (default_b_index + 1) % len(all_players)
 
         player_b_name = st.selectbox(
@@ -511,7 +533,6 @@ def main():
             st.info(f"**{player_a_name}** aloittaa Legin (TWS): **{twp_a * 100:.1f} %**")
         with col_leg_2:
             st.info(f"**{player_a_name}** vastaanottaa Legin (RWS): **{rwp_a * 100:.1f} %**")
-
 
 if __name__ == '__main__':
     main()
