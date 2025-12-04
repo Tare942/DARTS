@@ -5,38 +5,50 @@ import os
 
 # --- 0. ENNUSTUSTEKSIN APUFUNKTIOT ---
 
-def get_score_prediction_text(prob_win_a, match_format, legs_or_sets_to_win):
+def get_score_prediction_text(prob_win_a, match_format, legs_or_sets_to_win, player_a_name, player_b_name):
     """Generates a text-based score prediction based on win probability (Pelaaja A:n näkökulmasta)."""
     P = prob_win_a * 100
     W = legs_or_sets_to_win
     
-    if match_format == 'BO Leg (esim. BO9, 5 legiä voittoon)':
-        # BO 2W-1 leg, e.g., BO9 -> W=5
-        if P > 80:
-            return f"A:n selkeä voitto ({W}-0, {W}-1 tai {W}-2 leg-tulos)."
-        elif P > 65:
-            return f"A:n todennäköinen voitto ({W}-2, {W}-3 tai {W}-4 leg-tulos)."
-        elif P > 50:
-            return f"Tasainen A:n voitto, esim. {W}-4."
-        elif P < 20:
-            return f"B:n selkeä voitto."
-        else: # 20% to 50%
-            return f"B:n todennäköinen voitto."
-    
-    elif match_format == 'Set-malli (esim. BO5 set, setti on BO5 leg)':
-        # BO 5 Set -> W=3 sets
-        if P > 80:
-            return "A:n selkeä voitto (3-0 tai 3-1 seteissä)."
-        elif P > 65:
-            return "A:n todennäköinen voitto (3-1 tai 3-2 seteissä)."
-        elif P > 50:
-            return "Tasainen A:n voitto (3-2 seteissä)."
-        elif P < 20:
-            return "B:n selkeä voitto (0-3 tai 1-3 seteissä)."
-        else: # 20% to 50%
-            return "B:n todennäköinen voitto."
+    # Määritellään kynnysarvot ja tulostekstit
+    if P > 80:
+        win_msg = f"{player_a_name}n selkeä voitto."
+        if match_format.startswith('BO Leg'):
+            score_example = f"({W}-0, {W}-1 tai {W}-2 leg-tulos)"
+        else:
+            score_example = "(3-0 tai 3-1 seteissä)"
+    elif P > 65:
+        win_msg = f"{player_a_name}n todennäköinen voitto."
+        if match_format.startswith('BO Leg'):
+            score_example = f"({W}-2, {W}-3 tai {W}-4 leg-tulos)"
+        else:
+            score_example = "(3-1 tai 3-2 seteissä)"
+    elif P > 50.5:
+        win_msg = f"Tasainen {player_a_name}n voitto."
+        if match_format.startswith('BO Leg'):
+            score_example = f"({W}-10 tai {W}-11 leg-tulos BO25:ssa, esim.)"
+        else:
+            score_example = "(3-2 seteissä)"
+    elif P < 19.5:
+        win_msg = f"{player_b_name}n selkeä voitto."
+        if match_format.startswith('BO Leg'):
+            score_example = f"(esim. 0-{W} tai 1-{W} leg-tulos)"
+        else:
+            score_example = "(0-3 tai 1-3 seteissä)"
+    elif P < 35:
+        win_msg = f"{player_b_name}n todennäköinen voitto."
+        if match_format.startswith('BO Leg'):
+            score_example = f"(esim. 3-{W} tai 4-{W} leg-tulos)"
+        else:
+            score_example = "(1-3 tai 2-3 seteissä)"
+    else:
+        win_msg = "Erittäin tasainen ottelu."
+        if match_format.startswith('BO Leg'):
+            score_example = f"({W}-12 tai 12-{W} leg-tulos BO25:ssa)"
+        else:
+            score_example = "(3-2 tai 2-3 seteissä)"
             
-    return "Ennustetta ei saatavilla tälle formaatille."
+    return f"{win_msg} {score_example}"
 
 # --- 1. DATAN KÄSITTELY FUNKTIOT ---
 
@@ -120,22 +132,25 @@ def set_player_stats(player_key):
 def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     """
     Laskee Legivoiton Todennäköisyyden (LWP) suhteellisen vahvuuden perusteella.
-    Käyttää päivitettyä FDI-painotusta (0.003).
+    Käyttää päivitettyä FDI-painotusta (0.003) ja aloittajan etua (1.01).
     """
     
     # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
     WEIGHT_SCORING = 1.0  
     WEIGHT_COP = 0.05     
     WEIGHT_3DA = 0.001    
-    WEIGHT_FDI = 0.003    # FDI:n painotus (käyttäjän pyytämä 0.003)
+    WEIGHT_FDI = 0.003    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
+    
+    # PÄIVITETTY: Aloittajan etu kerroin
+    TWS_ADVANTAGE_MULTIPLIER = 1.01 
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima TWS/RWS roolin mukaan
-    if type == 'TWS':
-        attacker_score = attacker_stats['TWS KA'] * WEIGHT_SCORING
+    if type == 'TWS': # Pelaaja A aloittaa legin
+        attacker_score = attacker_stats['TWS KA'] * WEIGHT_SCORING * TWS_ADVANTAGE_MULTIPLIER
         defender_score = defender_stats['RWS KA'] * WEIGHT_SCORING
-    else: # type == 'RWS' (Attacker is receiving the start)
+    else: # type == 'RWS' (Pelaaja B aloittaa legin)
         attacker_score = attacker_stats['RWS KA'] * WEIGHT_SCORING
-        defender_score = defender_stats['TWS KA'] * WEIGHT_SCORING
+        defender_score = defender_stats['TWS KA'] * WEIGHT_SCORING * TWS_ADVANTAGE_MULTIPLIER
 
     # 2. Lisätään hienosäätö COP, 3DA ja FDI perusteella
     
@@ -166,6 +181,7 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
 def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000):
     """
     Simuloi koko ottelu Monte Carlo -tekniikalla.
+    start_player: 1 jos A aloittaa, -1 jos B aloittaa.
     """
     
     # Probabilities for A winning the leg:
@@ -211,7 +227,6 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
             current_start_player = start_player # Match starter
             a_sets = 0
             b_sets = 0
-            set_count = 0
             
             while a_sets < sets_to_win and b_sets < sets_to_win:
                 
@@ -220,16 +235,16 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
                 b_legs = 0
                 leg_count_in_set = 0
                 
+                set_starter_a = (current_start_player == 1) # Tarkista, kuka aloittaa setin
+                
                 while a_legs < 3 and b_legs < 3: 
                     
                     # Logiikka legien aloittajan vuorotteluun setin sisällä
-                    is_set_starter_a = (current_start_player == 1)
-
-                    if is_set_starter_a:
+                    if set_starter_a:
                         # Jos A aloittaa setin, A aloittaa parilliset legity (0, 2, 4)
                         leg_starter_a = (leg_count_in_set % 2 == 0)
                     else:
-                        # Jos B aloittaa setin, A aloittaa parittomat legity (1, 3, 5)
+                        # Jos B aloittaa setin, B aloittaa parilliset legity, eli A aloittaa parittomat
                         leg_starter_a = (leg_count_in_set % 2 != 0)
 
                     # TWS/RWS roolin asetus
@@ -250,9 +265,8 @@ def simulate_game(a_stats, b_stats, match_format, start_player, iterations=50000
                 else:
                     b_sets += 1
                     
-                # Vuorotellaan seuraavan setin aloittaja
+                # Vuorotellaan seuraavan setin aloittaja (Match starter vaihtuu)
                 current_start_player *= -1 
-                set_count += 1
 
             if a_sets > b_sets:
                 a_match_wins += 1
@@ -322,7 +336,7 @@ def main():
         st.session_state['sets_to_win'] = 3
 
     
-    col_settings1, col_settings2 = st.columns(2) # Poistettu 3. sarake
+    col_settings1, col_settings2 = st.columns(2) 
 
     with col_settings1:
         match_format = st.selectbox(
@@ -448,7 +462,7 @@ def main():
         st.markdown("---")
         
         # --- Simulaatio 1: Pelaaja A Aloittaa Ottelun ---
-        st.markdown("### 🥇 Skenaario 1: **" + player_a_name + "** Aloittaa Ottelun")
+        st.markdown(f"### 🥇 Skenaario 1: **{player_a_name}** Aloittaa Ottelun")
         
         prob_a_start_A = simulate_game(a_stats, b_stats, st.session_state['match_format'], 1, iterations=N_ITERATIONS)
         prob_b_start_A = 1.0 - prob_a_start_A
@@ -460,14 +474,14 @@ def main():
         with col_b1:
             st.metric(label=f"**{player_b_name}** voitto", value=f"{prob_b_start_A * 100:.1f} %")
             
-        score_text_start_A = get_score_prediction_text(prob_a_start_A, st.session_state['match_format'], W)
-        st.info(f"**Tulosennuste:** {score_text_start_A.replace('A', player_a_name).replace('B', player_b_name)}")
+        score_text_start_A = get_score_prediction_text(prob_a_start_A, st.session_state['match_format'], W, player_a_name, player_b_name)
+        st.info(f"**Tulosennuste:** {score_text_start_A}")
         st.progress(prob_a_start_A)
 
         st.markdown("---")
 
         # --- Simulaatio 2: Pelaaja B Aloittaa Ottelun ---
-        st.markdown("### 🥈 Skenaario 2: **" + player_b_name + "** Aloittaa Ottelun")
+        st.markdown(f"### 🥈 Skenaario 2: **{player_b_name}** Aloittaa Ottelun")
 
         prob_a_start_B = simulate_game(a_stats, b_stats, st.session_state['match_format'], -1, iterations=N_ITERATIONS)
         prob_b_start_B = 1.0 - prob_a_start_B
@@ -479,8 +493,8 @@ def main():
         with col_b2:
             st.metric(label=f"**{player_b_name}** voitto", value=f"{prob_b_start_B * 100:.1f} %")
             
-        score_text_start_B = get_score_prediction_text(prob_a_start_B, st.session_state['match_format'], W)
-        st.info(f"**Tulosennuste:** {score_text_start_B.replace('A', player_a_name).replace('B', player_b_name)}")
+        score_text_start_B = get_score_prediction_text(prob_a_start_B, st.session_state['match_format'], W, player_a_name, player_b_name)
+        st.info(f"**Tulosennuste:** {score_text_start_B}")
         st.progress(prob_a_start_B)
 
         st.markdown("---")
@@ -490,6 +504,7 @@ def main():
         rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
         
         st.markdown("### 🎯 Legivoiton Todennäköisyydet")
+        st.caption(f"Legien LWP lasketaan käyttäen **FDI-painoa 0.003** ja **aloittajan etua 1.01**.")
         col_leg_1, col_leg_2 = st.columns(2)
         
         with col_leg_1:
