@@ -154,7 +154,7 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     WEIGHT_SCORING = 1.0  
     WEIGHT_COP = 0.05     
     WEIGHT_3DA = 0.001    
-    WEIGHT_FDI = 0.005    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
+    WEIGHT_FDI = 0.02    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
     
     # PÄIVITETTY: Aloittajan etu kerroin
     TWS_ADVANTAGE_MULTIPLIER = 1.66 
@@ -526,7 +526,7 @@ def main():
         rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
         
         st.markdown("### 🎯 Legivoiton Todennäköisyydet")
-        st.caption(f"Legien LWP lasketaan käyttäen **FDI-painoa 0.005** ja **aloittajan etua 1.66**.")
+        st.caption(f"Legien LWP lasketaan käyttäen **FDI-painoa 0.02** ja **aloittajan etua 1.66**.")
         col_leg_1, col_leg_2 = st.columns(2)
         
         with col_leg_1:
