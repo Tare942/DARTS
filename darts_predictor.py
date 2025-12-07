@@ -299,7 +299,7 @@ def main():
     st.markdown("### 💾 Datan lataus")
     
     # Oletettu tiedostonimi saatavilla olevasta datasta
-    default_file_path = "MM 25 csv - Voitko tehdä kaikista osallistujista docs listan... (1).csv"
+    default_file_path = "MM 25.csv"
     
     data_file_path = st.text_input(
         "Syötä pelaajadataa sisältävän CSV-tiedoston nimi tai polku:",
