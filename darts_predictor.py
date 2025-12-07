@@ -147,7 +147,7 @@ def set_player_stats(player_key):
 def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     """
     Laskee Legivoiton Todennäköisyyden (LWP) suhteellisen vahvuuden perusteella.
-    Käyttää päivitettyä FDI-painotusta (0.003) ja aloittajan etua (1.01).
+    Käyttää päivitettyä FDI-painotusta (0.005) ja aloittajan etua (1.08).
     """
     
     # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
@@ -157,7 +157,7 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     WEIGHT_FDI = 0.005    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
     
     # PÄIVITETTY: Aloittajan etu kerroin
-    TWS_ADVANTAGE_MULTIPLIER = 1.05 
+    TWS_ADVANTAGE_MULTIPLIER = 1.08 
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima TWS/RWS roolin mukaan
     if type == 'TWS': # Pelaaja A aloittaa legin
