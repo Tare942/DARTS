@@ -526,7 +526,7 @@ def main():
         rwp_a = calculate_leg_win_probability(a_stats, b_stats, type='RWS') 
         
         st.markdown("### 🎯 Legivoiton Todennäköisyydet")
-        st.caption(f"Legien LWP lasketaan käyttäen **FDI-painoa 0.02** ja **aloittajan etua 1.27**.")
+        
         col_leg_1, col_leg_2 = st.columns(2)
         
         with col_leg_1:
