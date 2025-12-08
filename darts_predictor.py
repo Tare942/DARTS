@@ -154,10 +154,10 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     WEIGHT_SCORING = 1.0  
     WEIGHT_COP = 0.075     
     WEIGHT_3DA = 0.03    
-    WEIGHT_FDI = 0.25    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
+    WEIGHT_FDI = 0.27    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
     
     # PÄIVITETTY: Aloittajan etu kerroin
-    TWS_ADVANTAGE_MULTIPLIER = 1.44 
+    TWS_ADVANTAGE_MULTIPLIER = 1.5 
     
     # 1. Määritellään hyökkääjän ja vastustajan legin pisteytysvoima TWS/RWS roolin mukaan
     if type == 'TWS': # Pelaaja A aloittaa legin
