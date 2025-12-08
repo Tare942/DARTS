@@ -153,8 +153,8 @@ def calculate_leg_win_probability(attacker_stats, defender_stats, type='TWS'):
     # 🟢 VAHVUUSMUUTTUJIEN MÄÄRITTELY (Painotukset)
     WEIGHT_SCORING = 1.0  
     WEIGHT_COP = 0.075     
-    WEIGHT_3DA = 0.05    
-    WEIGHT_FDI = 0.15    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
+    WEIGHT_3DA = 0.03    
+    WEIGHT_FDI = 0.125    # PÄIVITETTY: Käyttäjän pyytämä FDI-painotus
     
     # PÄIVITETTY: Aloittajan etu kerroin
     TWS_ADVANTAGE_MULTIPLIER = 1.27 
